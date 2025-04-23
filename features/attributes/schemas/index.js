@@ -1,5 +1,5 @@
 import * as z from "zod";
-import { ATTRIBUTE_TYPES } from "@/constants/attribute-types";
+import { ATTRIBUTE_TYPES } from "@/constants/attributes";
 
 export const createAttributeSchema = z.object({
   name: z.string().trim().min(1, { message: "Please enter a name" }),

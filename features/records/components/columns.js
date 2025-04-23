@@ -6,7 +6,6 @@ import {
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { DraggableColumn } from "@/features/records/components/draggable-column";
 import { EditableCell } from "@/features/records/components/editable-cell";
@@ -153,20 +152,23 @@ export const columns = ({
             <Plus className="mr-2 h-4 w-4" /> Add Column
           </div>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          {hiddenAttributes.map((attribute) => (
-            <DropdownMenuItem
-              key={attribute.id}
-              onClick={() => handleAddColumn(attribute.id)}
-            >
-              {attribute.name}
+        <DropdownMenuContent align="start" className="max-h-[400px] w-72 p-0">
+          <div className="max-h-[350px] overflow-y-auto p-1">
+            {hiddenAttributes.map((attribute) => (
+              <DropdownMenuItem
+                key={attribute.id}
+                onClick={() => handleAddColumn(attribute.id)}
+              >
+                {attribute.name}
+              </DropdownMenuItem>
+            ))}
+          </div>
+          <div className="bg-popover sticky bottom-0 border-t p-1">
+            <DropdownMenuItem onClick={handleOpenCreateAttributeModal}>
+              <Plus className="mr-2 h-4 w-4" />
+              Create new attribute
             </DropdownMenuItem>
-          ))}
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={handleOpenCreateAttributeModal}>
-            <Plus className="h-4 w-4" />
-            Create new attribute
-          </DropdownMenuItem>
+          </div>
         </DropdownMenuContent>
       </DropdownMenu>
     ),

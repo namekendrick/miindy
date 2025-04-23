@@ -45,12 +45,6 @@ export const standardObjects = (workspaceId) => [
           workspaceId,
         },
         {
-          name: "List entries",
-          attributeType: "RECORD",
-          isSystem: true,
-          workspaceId,
-        },
-        {
           name: "Categories",
           attributeType: "MULTI_SELECT",
           isSystem: true,
@@ -262,12 +256,6 @@ export const standardObjects = (workspaceId) => [
           workspaceId,
         },
         {
-          name: "List entries",
-          attributeType: "RECORD",
-          isSystem: true,
-          workspaceId,
-        },
-        {
           name: "Deal owner",
           attributeType: "USER",
           isRequired: true,
@@ -377,12 +365,6 @@ export const standardObjects = (workspaceId) => [
           attributeType: "LOCATION",
           isSystem: true,
           isEnriched: true,
-          workspaceId,
-        },
-        {
-          name: "List entries",
-          attributeType: "RECORD",
-          isSystem: true,
           workspaceId,
         },
         {
@@ -561,12 +543,6 @@ export const standardObjects = (workspaceId) => [
           workspaceId,
         },
         {
-          name: "List entries",
-          attributeType: "RECORD",
-          isSystem: true,
-          workspaceId,
-        },
-        {
           name: "User ID",
           attributeType: "TEXT",
           isUnique: true,
@@ -629,12 +605,6 @@ export const standardObjects = (workspaceId) => [
         {
           name: "Avatar URL",
           attributeType: "TEXT",
-          isSystem: true,
-          workspaceId,
-        },
-        {
-          name: "List entries",
-          attributeType: "RECORD",
           isSystem: true,
           workspaceId,
         },

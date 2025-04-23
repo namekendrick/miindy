@@ -85,7 +85,6 @@ model Attribute {
   isUnique         Boolean           @default(false)
   isRequired       Boolean           @default(false)
   isSystem         Boolean           @default(false)
-  isSystemOnly     Boolean           @default(false)
   isEnriched       Boolean           @default(false)
   isArchived       Boolean           @default(false)
   workspaceId      String
