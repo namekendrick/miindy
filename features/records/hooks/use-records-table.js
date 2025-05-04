@@ -11,6 +11,7 @@ import { useState } from "react";
 
 import { RECORDS_PER_PAGE } from "@/constants/pagination";
 import { useCreateAttributeModal } from "@/features/attributes/hooks/use-create-attribute-modal";
+import { useCreateRecord } from "@/features/records/api/use-create-record";
 import { useGetRecords } from "@/features/records/api/use-get-records";
 import { useSaveView } from "@/features/records/api/use-save-view";
 import { useUpdateValue } from "@/features/records/api/use-update-value";
@@ -23,6 +24,8 @@ export const useRecordsTable = (objectType, workspaceId, viewId, views) => {
 
   const { mutate: saveView, isPending: isSavingView } = useSaveView();
   const { mutate: updateValue } = useUpdateValue();
+  const { mutate: createRecord, isPending: isCreatingRecord } =
+    useCreateRecord();
 
   const openNewViewModal = useNewViewModal((state) => state.onOpen);
   const openCreateAttributeModal = useCreateAttributeModal(
@@ -104,6 +107,13 @@ export const useRecordsTable = (objectType, workspaceId, viewId, views) => {
       page: pagination.pageIndex + 1,
       currentFilters,
       currentView,
+    });
+  };
+
+  const handleAddRecord = () => {
+    createRecord({
+      objectType,
+      workspaceId,
     });
   };
 
@@ -316,6 +326,8 @@ export const useRecordsTable = (objectType, workspaceId, viewId, views) => {
 
   return {
     recordsTable,
+    handleAddRecord,
+    isCreatingRecord,
     isLoadingRecords,
     isSavingView,
     hasChanges,

@@ -32,6 +32,8 @@ import { RecordActionsModal } from "@/features/records/components/modals/record-
 export const RecordsTable = ({ objectType, workspaceId, viewId, views }) => {
   const {
     recordsTable: table,
+    handleAddRecord,
+    isCreatingRecord,
     isLoadingRecords,
     isSavingView,
     hasChanges,
@@ -102,7 +104,11 @@ export const RecordsTable = ({ objectType, workspaceId, viewId, views }) => {
               </DropdownMenu>
             </div>
           )}
-          <Button size="sm">
+          <Button
+            size="sm"
+            onClick={handleAddRecord}
+            disabled={isCreatingRecord}
+          >
             <Plus className="size-4" /> Add Record
           </Button>
         </div>
