@@ -1,7 +1,11 @@
 "use server";
 
 import prisma from "@/lib/prisma";
-import { standardObjects, standardObjectConfigs } from "@/constants/objects";
+import {
+  standardObjects,
+  standardObjectConfigs,
+  standardRelationships,
+} from "@/constants/objects";
 import { createWorkspaceSchema } from "@/features/workspaces/schemas";
 import { currentUser } from "@/lib/auth";
 
@@ -39,12 +43,14 @@ export const createWorkspace = async (values) => {
       },
       select: {
         id: true,
+        name: true,
         objects: {
           include: { attributes: true },
         },
       },
     });
 
+    // Set up record text attributes for each object
     for (const config of standardObjectConfigs) {
       const object = updated.objects.find((o) => o.type === config.type);
 
@@ -53,21 +59,60 @@ export const createWorkspace = async (values) => {
           (a) => a.name === config.attributeName,
         );
 
-        if (attribute) {
+        if (attribute)
           await prisma.object.update({
             where: { id: object.id },
             data: { recordTextAttributeId: attribute.id },
           });
-        } else {
-          console.warn(
-            `[CREATE_WORKSPACE] Could not find attribute "${config.attributeName}" for standard object type "${config.type}" (Workspace ID: ${workspace.id})`,
-          );
-        }
-      } else {
-        console.warn(
-          `[CREATE_WORKSPACE] Could not find standard object type "${config.type}" (Workspace ID: ${workspace.id})`,
-        );
       }
+    }
+
+    const objectsByType = {};
+    const attributesByObjectAndName = {};
+
+    // Build lookups for efficient relationship creation
+    for (const object of updated.objects) {
+      objectsByType[object.type] = object;
+      attributesByObjectAndName[object.type] = {};
+
+      for (const attr of object.attributes) {
+        attributesByObjectAndName[object.type][attr.name] = attr;
+      }
+    }
+
+    const relationshipsToCreate = [];
+
+    for (const relationship of standardRelationships) {
+      const {
+        sourceObjectType,
+        sourceAttributeName,
+        targetObjectType,
+        targetAttributeName,
+        relationshipType,
+      } = relationship;
+
+      const sourceAttribute =
+        attributesByObjectAndName[sourceObjectType]?.[sourceAttributeName];
+      const targetAttribute =
+        attributesByObjectAndName[targetObjectType]?.[targetAttributeName];
+
+      if (sourceAttribute && targetAttribute) {
+        relationshipsToCreate.push({
+          sourceAttributeId: sourceAttribute.id,
+          targetAttributeId: targetAttribute.id,
+          relationshipType,
+        });
+      }
+    }
+
+    if (relationshipsToCreate.length > 0) {
+      await prisma.$transaction(
+        relationshipsToCreate.map((rel) =>
+          prisma.relationship.create({
+            data: rel,
+          }),
+        ),
+      );
     }
 
     for (const object of updated.objects) {

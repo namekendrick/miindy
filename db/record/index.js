@@ -162,6 +162,17 @@ export const getRecords = async (values) => {
             where: {
               isArchived: false,
             },
+            include: {
+              sourceRelationship: {
+                include: {
+                  targetAttribute: {
+                    include: {
+                      object: true,
+                    },
+                  },
+                },
+              },
+            },
           },
         },
       },
@@ -172,4 +183,167 @@ export const getRecords = async (values) => {
   const totalRecords = await prisma.record.count({ where: whereClause });
 
   return { paginated, totalPages: Math.ceil(totalRecords / RECORDS_PER_PAGE) };
+};
+
+export const getRelatedRecords = async (values) => {
+  const { recordId, attributeId } = values;
+
+  const attribute = await prisma.attribute.findUnique({
+    where: { id: attributeId },
+    select: { attributeType: true },
+  });
+
+  // For RELATIONSHIP type, get records from both sides
+  if (attribute?.attributeType === "RELATIONSHIP") {
+    const relatedRecordsAsA = await prisma.relatedRecord.findMany({
+      where: {
+        recordAId: recordId,
+        attributeAId: attributeId,
+      },
+      include: {
+        recordB: {
+          include: {
+            object: true,
+            values: {
+              include: {
+                attribute: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const relatedRecordsAsB = await prisma.relatedRecord.findMany({
+      where: {
+        recordBId: recordId,
+        attributeBId: attributeId,
+      },
+      include: {
+        recordA: {
+          include: {
+            object: true,
+            values: {
+              include: {
+                attribute: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    // Transform to consistent format
+    const relatedRecordsA = relatedRecordsAsA.map((relation) => ({
+      id: relation.recordB.id,
+      record: relation.recordB,
+      relationId: relation.id,
+    }));
+
+    const relatedRecordsB = relatedRecordsAsB.map((relation) => ({
+      id: relation.recordA.id,
+      record: relation.recordA,
+      relationId: relation.id,
+    }));
+
+    return [...relatedRecordsA, ...relatedRecordsB];
+  }
+  // For RECORD type, get records only from side A (one-directional)
+  else if (attribute?.attributeType === "RECORD") {
+    const relatedRecordsAsA = await prisma.relatedRecord.findMany({
+      where: {
+        recordAId: recordId,
+        attributeAId: attributeId,
+      },
+      include: {
+        recordB: {
+          include: {
+            object: true,
+            values: {
+              include: {
+                attribute: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    // Transform to consistent format
+    return relatedRecordsAsA.map((relation) => ({
+      id: relation.recordB.id,
+      record: relation.recordB,
+      relationId: relation.id,
+    }));
+  }
+
+  return [];
+};
+
+export const searchRecords = async (values) => {
+  const { workspaceId, objectId, searchTerm } = values;
+
+  // Get the object based on type
+  const object = await prisma.object.findFirst({
+    where: {
+      id: objectId,
+      workspaceId,
+    },
+    include: {
+      recordTextAttribute: true,
+    },
+  });
+
+  if (!object) {
+    return [];
+  }
+
+  // If there's a record text attribute, we can search by it
+  if (object.recordTextAttributeId) {
+    const records = await prisma.record.findMany({
+      where: {
+        workspaceId,
+        objectId: object.id,
+        values: {
+          some: {
+            attributeId: object.recordTextAttributeId,
+            value: {
+              path: ["value"],
+              string_contains: searchTerm,
+            },
+          },
+        },
+      },
+      include: {
+        object: true,
+        values: {
+          include: {
+            attribute: true,
+          },
+        },
+      },
+      take: 10,
+    });
+
+    return records;
+  }
+
+  // Fallback to just getting records without filtering
+  const records = await prisma.record.findMany({
+    where: {
+      workspaceId,
+      objectId,
+    },
+    include: {
+      object: true,
+      values: {
+        include: {
+          attribute: true,
+        },
+      },
+    },
+    take: 10,
+  });
+
+  return records;
 };

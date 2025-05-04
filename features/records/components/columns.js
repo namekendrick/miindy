@@ -109,6 +109,14 @@ export const columns = ({
 
       columns.push({
         accessorFn: (row) => {
+          if (
+            attribute.name === "Created at" &&
+            attribute.isSystem &&
+            attribute.attributeType === "TIMESTAMP"
+          ) {
+            return row.createdAt;
+          }
+
           const value = row.values.find((v) => v.attributeId === attribute.id)
             ?.value?.value;
           return value || "";

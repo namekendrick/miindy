@@ -20,8 +20,6 @@ model User {
   updatedAt             DateTime               @updatedAt
   accounts              Account[]
   workspaces            Permission[]
-  assignedRecords       Record[]               @relation("RecordAssignee")
-  ownedRecords          Record[]               @relation("RecordOwner")
   twoFactorConfirmation TwoFactorConfirmation?
   favoriteViews         ViewFavorite[]
 }
@@ -77,29 +75,49 @@ model Object {
 }
 
 model Attribute {
-  id               String            @id @default(cuid())
-  name             String
-  description      String?
-  attributeType    AttributeType
-  relationshipType RelationshipType?
-  isUnique         Boolean           @default(false)
-  isRequired       Boolean           @default(false)
-  isSystem         Boolean           @default(false)
-  isEnriched       Boolean           @default(false)
-  isArchived       Boolean           @default(false)
-  workspaceId      String
-  objectId         String
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
-  object           Object            @relation(fields: [objectId], references: [id], onDelete: Cascade)
-  values           AttributeValue[]
-  listAttributes   ListAttribute[]
-  relatedRecords   RelatedRecord[]
-  isRecordTextFor  Object[]          @relation("RecordTextAttribute")
+  id                 String           @id @default(cuid())
+  name               String
+  description        String?
+  attributeType      AttributeType
+  isSystem           Boolean          @default(false)
+  isUnique           Boolean          @default(false)
+  isRequired         Boolean          @default(false)
+  isEnriched         Boolean          @default(false)
+  isReadOnly         Boolean          @default(false)
+  isArchived         Boolean          @default(false)
+  config             Json?
+  defaultValue       Json?
+  format             String?
+  workspaceId        String
+  objectId           String
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  object             Object           @relation(fields: [objectId], references: [id], onDelete: Cascade)
+  isRecordTextFor    Object[]         @relation("RecordTextAttribute")
+  values             AttributeValue[]
+  listAttributes     ListAttribute[]
+  relatedAsA         RelatedRecord[]  @relation("AttributeARelationship")
+  relatedAsB         RelatedRecord[]  @relation("AttributeBRelationship")
+  sourceRelationship Relationship?    @relation("SourceRelationship")
+  targetRelationship Relationship?    @relation("TargetRelationship")
 
   @@unique([objectId, name])
   @@index([workspaceId])
   @@index([objectId])
+}
+
+model Relationship {
+  id                String           @id @default(cuid())
+  sourceAttributeId String           @unique
+  targetAttributeId String?          @unique
+  relationshipType  RelationshipType
+  sourceAttribute   Attribute        @relation("SourceRelationship", fields: [sourceAttributeId], references: [id], onDelete: Cascade)
+  targetAttribute   Attribute?       @relation("TargetRelationship", fields: [targetAttributeId], references: [id], onDelete: SetNull)
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([sourceAttributeId])
+  @@index([targetAttributeId])
 }
 
 model Record {
@@ -110,18 +128,37 @@ model Record {
   assigneeId  String?
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
+  object      Object           @relation(fields: [objectId], references: [id], onDelete: Cascade)
   values      AttributeValue[]
   lists       ListRecord[]
-  assignee    User?            @relation("RecordAssignee", fields: [assigneeId], references: [id])
-  object      Object           @relation(fields: [objectId], references: [id], onDelete: Cascade)
-  owner       User?            @relation("RecordOwner", fields: [ownerId], references: [id])
-  relatedFrom RelatedRecord[]  @relation("RelatedFrom")
-  relatedTo   RelatedRecord[]  @relation("RelatedTo")
+  relatedAsA  RelatedRecord[]  @relation("RecordARelationship")
+  relatedAsB  RelatedRecord[]  @relation("RecordBRelationship")
 
   @@index([objectId])
   @@index([workspaceId])
   @@index([ownerId])
   @@index([assigneeId])
+}
+
+model RelatedRecord {
+  id           String   @id @default(cuid())
+  recordAId    String
+  recordBId    String
+  attributeAId String
+  attributeBId String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  recordA    Record     @relation("RecordARelationship", fields: [recordAId], references: [id], onDelete: Cascade)
+  recordB    Record     @relation("RecordBRelationship", fields: [recordBId], references: [id], onDelete: Cascade)
+  attributeA Attribute  @relation("AttributeARelationship", fields: [attributeAId], references: [id], onDelete: Cascade)
+  attributeB Attribute? @relation("AttributeBRelationship", fields: [attributeBId], references: [id], onDelete: SetNull)
+
+  @@unique([recordAId, recordBId, attributeAId])
+  @@index([recordAId])
+  @@index([recordBId])
+  @@index([attributeAId])
+  @@index([attributeBId])
 }
 
 model AttributeValue {
@@ -226,23 +263,6 @@ model ViewFavorite {
   @@unique([viewId, userId])
   @@index([viewId])
   @@index([userId])
-}
-
-model RelatedRecord {
-  id           String    @id @default(cuid())
-  attributeId  String
-  fromRecordId String
-  toRecordId   String
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  attribute    Attribute @relation(fields: [attributeId], references: [id], onDelete: Cascade)
-  fromRecord   Record    @relation("RelatedFrom", fields: [fromRecordId], references: [id], onDelete: Cascade)
-  toRecord     Record    @relation("RelatedTo", fields: [toRecordId], references: [id], onDelete: Cascade)
-
-  @@unique([attributeId, fromRecordId, toRecordId])
-  @@index([attributeId])
-  @@index([fromRecordId])
-  @@index([toRecordId])
 }
 
 model Account {

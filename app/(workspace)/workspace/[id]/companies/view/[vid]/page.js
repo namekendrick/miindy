@@ -1,25 +1,21 @@
-"use client";
+import { redirect } from "next/navigation";
 
-import { ClipLoader } from "react-spinners";
-
+import { getViews } from "@/db/view";
 import { RecordsTable } from "@/features/records/components/records-table";
-import { useRecordsTable } from "@/features/records/hooks/use-records-table";
-import { useWorkspaceId } from "@/features/workspaces/hooks/use-workspace-id";
 
-export default function CompanyRecords() {
-  const workspaceId = useWorkspaceId();
+export default async function CompaniesRecords({ params }) {
+  const { id, vid } = await params;
+  const views = await getViews(id, "COMPANY");
 
-  const { recordsTable, isLoadingRecords } = useRecordsTable(
-    workspaceId,
-    "companies",
+  if (!views.some((view) => view.id === vid))
+    redirect(`/workspace/${id}/companies/view`);
+
+  return (
+    <RecordsTable
+      objectType="COMPANY"
+      workspaceId={id}
+      viewId={vid}
+      views={views}
+    />
   );
-
-  if (isLoadingRecords)
-    return (
-      <div className="mt-40 flex items-center justify-center gap-2">
-        <ClipLoader size={20} /> Loading
-      </div>
-    );
-
-  return <RecordsTable table={recordsTable} />;
 }
