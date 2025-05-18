@@ -9,7 +9,6 @@ export const useUpdateValue = () => {
   const mutation = useMutation({
     mutationFn: async (values) => {
       const response = await updateValue(values);
-      // toast.success(response.message);
 
       if (response.status !== 200 && response.status !== 201)
         throw new Error(response.message);

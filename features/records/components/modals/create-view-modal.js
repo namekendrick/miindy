@@ -34,6 +34,7 @@ export const CreateViewModal = () => {
         name: values.name,
         workspaceId: modal.workspaceId,
         objectType: modal.objectType,
+        currentFilters: modal.currentFilters,
       },
       {
         onSuccess: (view) => {

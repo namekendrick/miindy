@@ -39,7 +39,7 @@ import { useDeleteViewModal } from "@/features/records/hooks/use-delete-view-mod
 import { useRenameViewModal } from "@/features/records/hooks/use-rename-view-modal";
 import { cn } from "@/lib/utils";
 
-export const ViewSwitcher = ({ views, viewId }) => {
+export const ViewSwitcher = ({ views, viewId, currentFilters }) => {
   const objectType = views.find((view) => view.id === viewId).object.type;
   const [open, setOpen] = useState(false);
   const openCreateViewModal = useCreateViewModal((state) => state.onOpen);
@@ -125,7 +125,11 @@ export const ViewSwitcher = ({ views, viewId }) => {
                 <CommandItem
                   onSelect={() => {
                     setOpen(false);
-                    openCreateViewModal({ workspaceId, objectType });
+                    openCreateViewModal({
+                      workspaceId,
+                      objectType,
+                      currentFilters,
+                    });
                   }}
                 >
                   <Plus className="h-4 w-4" /> Create new view

@@ -151,7 +151,7 @@ export const standardObjects = (workspaceId) => [
         },
         {
           name: "Created at",
-          attributeType: "TIMESTAMP",
+          attributeType: "DATETIME",
           isSystem: true,
           isReadOnly: true,
           workspaceId,
@@ -181,11 +181,12 @@ export const standardObjects = (workspaceId) => [
           isSystem: true,
           config: {
             options: [
-              "Open",
-              "Opportunity",
-              "Negotiating",
-              "Proposal Sent",
-              "Closed",
+              { color: "#fde047", status: "Open", position: "0" },
+              { color: "#3b82f6", status: "Opportunity", position: "1" },
+              { color: "#8b5cf6", status: "Negotiating", position: "2" },
+              { color: "#f97316", status: "Proposal Sent", position: "3" },
+              { color: "#22c55e", status: "Closed Won", position: "4" },
+              { color: "#ef4444", status: "Closed Lost", position: "5" },
             ],
           },
           workspaceId,
@@ -204,7 +205,7 @@ export const standardObjects = (workspaceId) => [
         },
         {
           name: "Created at",
-          attributeType: "TIMESTAMP",
+          attributeType: "DATETIME",
           isSystem: true,
           workspaceId,
         },
@@ -275,7 +276,7 @@ export const standardObjects = (workspaceId) => [
         },
         {
           name: "Created at",
-          attributeType: "TIMESTAMP",
+          attributeType: "DATETIME",
           isSystem: true,
           isReadOnly: true,
           workspaceId,
@@ -307,7 +308,7 @@ export const standardObjects = (workspaceId) => [
         },
         {
           name: "Created at",
-          attributeType: "TIMESTAMP",
+          attributeType: "DATETIME",
           isSystem: true,
           workspaceId,
         },
@@ -370,7 +371,7 @@ export const standardObjects = (workspaceId) => [
         },
         {
           name: "Created at",
-          attributeType: "TIMESTAMP",
+          attributeType: "DATETIME",
           isSystem: true,
           workspaceId,
         },

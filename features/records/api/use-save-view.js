@@ -27,10 +27,11 @@ export const useSaveView = () => {
             objectType: data.objectType,
             workspaceId: data.workspaceId,
             viewId: data.viewId,
-            page: data.page,
           },
         ],
       });
+
+      queryClient.invalidateQueries({ queryKey: ["objectAttributes"] });
     },
     onError: (error) => {
       toast.error(error.message);

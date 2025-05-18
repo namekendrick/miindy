@@ -19,56 +19,50 @@ export const archiveAttribute = async (values) => {
   if (!permission) return { status: 401, message: "Unauthorized!" };
 
   if (!restore) {
-    // Find all views associated with this object
     const views = await prisma.view.findMany({
       where: { objectId: attribute.objectId },
       include: { configuration: true },
     });
 
-    // Update each view's configuration
     for (const view of views) {
-      if (view.configuration?.visibleColumns) {
-        // Remove the attribute from visible columns
-        const updatedVisibleColumns = JSON.parse(
-          JSON.stringify(view.configuration.visibleColumns),
-        ).filter((col) => col.id !== attribute.id);
+      if (view.configuration) {
+        const updates = {};
 
-        // Update sorts if this attribute was being used
-        let updatedSorts = view.configuration.sorts;
+        if (view.configuration.visibleColumns) {
+          updates.visibleColumns = JSON.parse(
+            JSON.stringify(view.configuration.visibleColumns),
+          ).filter((col) => col.id !== attribute.id);
+        }
 
         if (
-          updatedSorts &&
-          JSON.parse(JSON.stringify(updatedSorts)).some(
+          view.configuration.sorts &&
+          JSON.parse(JSON.stringify(view.configuration.sorts)).some(
             (sort) => sort.attributeId === attribute.id,
           )
         ) {
-          updatedSorts = null;
+          updates.sorts = null;
         }
 
-        // Update filters if this attribute was being used
-        let updatedFilters = view.configuration.filters;
-
-        if (
-          updatedFilters &&
-          JSON.parse(JSON.stringify(updatedFilters)).some(
-            (filter) => filter.attributeId === attribute.id,
-          )
-        ) {
-          updatedFilters = JSON.parse(JSON.stringify(updatedFilters)).filter(
-            (filter) => filter.attributeId !== attribute.id,
+        if (view.configuration.filters) {
+          const filtersJson = JSON.parse(
+            JSON.stringify(view.configuration.filters),
+          );
+          const updatedFilters = removeAttributeFromFilters(
+            filtersJson,
+            attribute.id,
           );
 
-          if (updatedFilters.length === 0) updatedFilters = null;
+          if (JSON.stringify(filtersJson) !== JSON.stringify(updatedFilters)) {
+            updates.filters = updatedFilters;
+          }
         }
 
-        await prisma.viewConfiguration.update({
-          where: { id: view.configuration.id },
-          data: {
-            visibleColumns: updatedVisibleColumns,
-            sorts: updatedSorts,
-            filters: updatedFilters,
-          },
-        });
+        if (Object.keys(updates).length > 0) {
+          await prisma.viewConfiguration.update({
+            where: { id: view.configuration.id },
+            data: updates,
+          });
+        }
       }
     }
   }
@@ -83,3 +77,28 @@ export const archiveAttribute = async (values) => {
     message: restore ? "Attribute restored!" : "Attribute archived!",
   };
 };
+
+function removeAttributeFromFilters(filter, attributeId) {
+  if (!filter || typeof filter !== "object") return filter;
+
+  if (filter.field === attributeId) {
+    return null;
+  }
+
+  if (filter.rules && Array.isArray(filter.rules)) {
+    const updatedRules = filter.rules
+      .map((rule) => removeAttributeFromFilters(rule, attributeId))
+      .filter((rule) => rule !== null);
+
+    if (updatedRules.length === 0) {
+      return null;
+    }
+
+    return {
+      ...filter,
+      rules: updatedRules,
+    };
+  }
+
+  return filter;
+}

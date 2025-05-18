@@ -6,7 +6,6 @@ export const useNewViewModal = create((set) => ({
   workspaceId: null,
   objectType: null,
   page: null,
-  currentFilters: [],
   currentView: null,
   onOpen: (values) => set({ isOpen: true, ...values }),
   onClose: () => set({ isOpen: false }),

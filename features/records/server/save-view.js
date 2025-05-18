@@ -1,8 +1,8 @@
 "use server";
 
 import prisma from "@/lib/prisma";
+import { validateAndNormalizeFilters } from "@/features/views/utils/filter-utils";
 import { currentUser } from "@/lib/auth";
-import { validateAndConvertFilters } from "@/lib/utils/filter-validation";
 
 export async function saveView(values) {
   const user = await currentUser();
@@ -11,10 +11,12 @@ export async function saveView(values) {
   const { workspaceId, viewId, configuration, createNewView, newViewName } =
     values;
 
+  const normalizedFilters = validateAndNormalizeFilters(configuration.filters);
+
   const configValues = {
-    filters: configuration.filters,
-    sorts: configuration.sorts,
-    visibleColumns: configuration.visibleColumns,
+    sorts: configuration.sorts || null,
+    visibleColumns: configuration.visibleColumns || [],
+    filters: normalizedFilters,
   };
 
   const permission = await prisma.permission.findFirst({
@@ -31,21 +33,6 @@ export async function saveView(values) {
       where: { id: viewId },
       include: { object: true },
     });
-
-    const attributes = await prisma.attribute.findMany({
-      where: { objectId: view.objectId },
-    });
-
-    if (configuration.filters) {
-      try {
-        configuration.filters = await validateAndConvertFilters(
-          configuration.filters,
-          attributes,
-        );
-      } catch (error) {
-        return { status: 400, message: error.message };
-      }
-    }
 
     if (createNewView) {
       const newView = await prisma.view.create({
@@ -77,7 +64,7 @@ export async function saveView(values) {
     if (existingConfig) {
       const updated = await prisma.viewConfiguration.update({
         where: { viewId },
-        data: { ...configuration },
+        data: { ...configValues },
       });
       return {
         status: 200,
@@ -88,7 +75,7 @@ export async function saveView(values) {
       const created = await prisma.viewConfiguration.create({
         data: {
           viewId,
-          ...configuration,
+          ...configValues,
         },
       });
       return {

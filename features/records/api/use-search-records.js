@@ -1,16 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
-
 import { searchRecords } from "@/db/record";
 
 export const useSearchRecords = (values, options = {}) => {
-  const { data, isLoading } = useQuery({
+  return useQuery({
     queryKey: ["search-records", { ...values }],
-    queryFn: () => {
-      return searchRecords(values);
-    },
-    enabled: !!values.searchTerm,
+    queryFn: () => searchRecords(values),
     ...options,
   });
-
-  return { data, isLoading };
 };

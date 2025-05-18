@@ -8,7 +8,7 @@ export async function createView(values) {
   const user = await currentUser();
   if (!user) return { status: 401, message: "Unauthorized!" };
 
-  const { name, workspaceId, objectType } = values;
+  const { name, workspaceId, objectType, currentFilters } = values;
 
   const permission = await prisma.permission.findFirst({
     where: {
@@ -51,7 +51,10 @@ export async function createView(values) {
         workspaceId,
         objectId: object.id,
         configuration: {
-          create: { visibleColumns },
+          create: {
+            visibleColumns,
+            filters: currentFilters || null,
+          },
         },
       },
       include: {

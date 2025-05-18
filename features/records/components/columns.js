@@ -28,7 +28,56 @@ export const columns = ({
 
   const columns = [];
 
-  columns.push({
+  columns.push(createSelectionColumn());
+
+  const recordTextAttribute = recordTextAttributeId
+    ? attributes.find((attr) => attr.id === recordTextAttributeId)
+    : null;
+
+  if (recordTextAttribute) {
+    columns.push(
+      createRecordTextColumn(recordTextAttribute, handleUpdateAttributeValue),
+    );
+  }
+
+  const visibleAttributeIds = visibleColumns?.map((col) => col.id) || [];
+
+  if (visibleColumns && visibleColumns.length > 0) {
+    visibleColumns.forEach((visibleCol) => {
+      if (visibleCol.id === recordTextAttributeId) return;
+
+      const attribute = attributes.find((attr) => attr.id === visibleCol.id);
+      if (!attribute) return;
+
+      columns.push(
+        createAttributeColumn({
+          attribute,
+          currentSort,
+          handleSortingChange,
+          handleHideColumn,
+          handleUpdateAttributeValue,
+        }),
+      );
+    });
+  }
+
+  const hiddenAttributes = attributes.filter(
+    (attr) => !visibleAttributeIds.includes(attr.id),
+  );
+
+  columns.push(
+    createAddColumnDropdown(
+      hiddenAttributes,
+      handleAddColumn,
+      handleOpenCreateAttributeModal,
+    ),
+  );
+
+  return columns;
+};
+
+function createSelectionColumn() {
+  return {
     id: "select",
     maxSize: 40,
     header: ({ table }) => (
@@ -48,110 +97,107 @@ export const columns = ({
         aria-label="Select row"
       />
     ),
-  });
+  };
+}
 
-  const recordTextAttribute = recordTextAttributeId
-    ? attributes.find((attr) => attr.id === recordTextAttributeId)
-    : null;
+function createRecordTextColumn(
+  recordTextAttribute,
+  handleUpdateAttributeValue,
+) {
+  return {
+    accessorFn: (row) => {
+      const value = row.values.find(
+        (v) => v.attributeId === recordTextAttribute.id,
+      )?.value?.value;
+      return value || "";
+    },
+    id: recordTextAttribute.id,
+    header: ({ header }) => (
+      <div className="relative flex h-full w-full items-center">
+        <span className="truncate pr-2">{recordTextAttribute.name}</span>
+        <div
+          onMouseDown={header.getResizeHandler()}
+          onTouchStart={header.getResizeHandler()}
+          className={`resizer ${
+            header.column.getIsResizing() ? "isResizing" : ""
+          }`}
+        />
+      </div>
+    ),
+    cell: ({ row, column }) => {
+      const value = column.accessorFn(row.original);
+      const enhancedAttribute = {
+        ...recordTextAttribute,
+        object: { recordTextAttributeId: recordTextAttribute.id },
+      };
 
-  if (recordTextAttribute) {
-    columns.push({
-      accessorFn: (row) => {
-        const value = row.values.find(
-          (v) => v.attributeId === recordTextAttribute.id,
-        )?.value?.value;
-        return value || "";
-      },
-      id: recordTextAttribute.id,
-      header: ({ header }) => (
-        <div className="flex h-full w-full items-center justify-between gap-1 font-medium">
-          <span className="truncate">{recordTextAttribute.name}</span>
-          <div
-            onMouseDown={header.getResizeHandler()}
-            onTouchStart={header.getResizeHandler()}
-            className={`resizer ${
-              header.column.getIsResizing() ? "isResizing" : ""
-            }`}
-          />
-        </div>
-      ),
-      cell: ({ row, column }) => {
-        const value = column.accessorFn(row.original);
-        const enhancedAttribute = {
-          ...recordTextAttribute,
-          object: { recordTextAttributeId: recordTextAttribute.id },
-        };
+      return (
+        <EditableCell
+          value={value}
+          row={row}
+          attribute={enhancedAttribute}
+          onSave={handleUpdateAttributeValue}
+        />
+      );
+    },
+  };
+}
 
-        return (
-          <EditableCell
-            value={value}
-            row={row}
-            attribute={enhancedAttribute}
-            onSave={handleUpdateAttributeValue}
-          />
-        );
-      },
-    });
-  }
+function createAttributeColumn({
+  attribute,
+  currentSort,
+  handleSortingChange,
+  handleHideColumn,
+  handleUpdateAttributeValue,
+}) {
+  const isSorted = currentSort && currentSort[0]?.attributeId === attribute.id;
+  const sortDirection = isSorted ? currentSort[0].direction : null;
 
-  const visibleAttributeIds = visibleColumns?.map((col) => col.id) || [];
+  return {
+    accessorFn: (row) => {
+      if (
+        attribute.name === "Created at" &&
+        attribute.isSystem &&
+        attribute.attributeType === "DATETIME"
+      ) {
+        return row.createdAt;
+      }
 
-  if (visibleColumns && visibleColumns.length > 0) {
-    visibleColumns.forEach((visibleCol) => {
-      if (visibleCol.id === recordTextAttributeId) return;
+      const value = row.values.find((v) => v.attributeId === attribute.id)
+        ?.value?.value;
+      return value || "";
+    },
+    id: attribute.id,
+    header: ({ header }) => (
+      <DraggableColumn
+        header={header}
+        attribute={attribute}
+        isSorted={isSorted}
+        sortDirection={sortDirection}
+        handleSortingChange={handleSortingChange}
+        handleHideColumn={handleHideColumn}
+      />
+    ),
+    cell: ({ row, column }) => {
+      const value = column.accessorFn(row.original);
+      return (
+        <EditableCell
+          value={value}
+          row={row}
+          attribute={attribute}
+          onSave={handleUpdateAttributeValue}
+        />
+      );
+    },
+  };
+}
 
-      const attribute = attributes.find((attr) => attr.id === visibleCol.id);
-      if (!attribute) return;
-
-      const isSorted =
-        currentSort && currentSort[0]?.attributeId === attribute.id;
-      const sortDirection = isSorted ? currentSort[0].direction : null;
-
-      columns.push({
-        accessorFn: (row) => {
-          if (
-            attribute.name === "Created at" &&
-            attribute.isSystem &&
-            attribute.attributeType === "TIMESTAMP"
-          ) {
-            return row.createdAt;
-          }
-
-          const value = row.values.find((v) => v.attributeId === attribute.id)
-            ?.value?.value;
-          return value || "";
-        },
-        id: attribute.id,
-        header: ({ header }) => (
-          <DraggableColumn
-            header={header}
-            attribute={attribute}
-            isSorted={isSorted}
-            sortDirection={sortDirection}
-            handleSortingChange={handleSortingChange}
-            handleHideColumn={handleHideColumn}
-          />
-        ),
-        cell: ({ row, column }) => {
-          const value = column.accessorFn(row.original);
-          return (
-            <EditableCell
-              value={value}
-              row={row}
-              attribute={attribute}
-              onSave={handleUpdateAttributeValue}
-            />
-          );
-        },
-      });
-    });
-  }
-
-  const hiddenAttributes = attributes.filter(
-    (attr) => !visibleAttributeIds.includes(attr.id),
-  );
-
-  columns.push({
+function createAddColumnDropdown(
+  hiddenAttributes,
+  handleAddColumn,
+  handleOpenCreateAttributeModal,
+) {
+  return {
     id: "add-column",
     header: () => (
       <DropdownMenu modal={false}>
@@ -180,7 +226,5 @@ export const columns = ({
         </DropdownMenuContent>
       </DropdownMenu>
     ),
-  });
-
-  return columns;
-};
+  };
+}

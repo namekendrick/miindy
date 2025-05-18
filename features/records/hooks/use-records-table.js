@@ -7,7 +7,7 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 import { getCoreRowModel, useReactTable } from "@tanstack/react-table";
-import { useState } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 
 import { RECORDS_PER_PAGE } from "@/constants/pagination";
 import { useCreateAttributeModal } from "@/features/attributes/hooks/use-create-attribute-modal";
@@ -17,6 +17,15 @@ import { useSaveView } from "@/features/records/api/use-save-view";
 import { useUpdateValue } from "@/features/records/api/use-update-value";
 import { columns } from "@/features/records/components/columns";
 import { useNewViewModal } from "@/features/records/hooks/use-new-view-modal";
+import {
+  getDraggableColumns,
+  reorderColumns,
+} from "@/features/records/utils/drag-drop-helpers";
+import {
+  filterVisibleAttributes,
+  createInitialFilterGroup,
+  getAttributesFromFirstRecord,
+} from "@/features/records/utils/table-helpers";
 
 export const useRecordsTable = (objectType, workspaceId, viewId, views) => {
   const currentView = views.find((view) => view.id === viewId);
@@ -32,12 +41,17 @@ export const useRecordsTable = (objectType, workspaceId, viewId, views) => {
     (state) => state.onOpen,
   );
 
-  const [currentFilters, setCurrentFilters] = useState(initialConfig?.filters);
   const [currentSort, setCurrentSort] = useState(initialConfig?.sorts);
   const [columnSizing, setColumnSizing] = useState({});
   const [visibleColumns, setVisibleColumns] = useState(
     initialConfig?.visibleColumns || [],
   );
+  const [currentFilters, setCurrentFilters] = useState(() => {
+    if (initialConfig?.filters && initialConfig.filters.type === "group") {
+      return initialConfig.filters;
+    }
+    return createInitialFilterGroup();
+  });
   const [hasChanges, setHasChanges] = useState(false);
   const [rowSelection, setRowSelection] = useState({});
   const [selectedRecords, setSelectedRecords] = useState([]);
@@ -45,12 +59,15 @@ export const useRecordsTable = (objectType, workspaceId, viewId, views) => {
     pageIndex: 0,
     pagesize: RECORDS_PER_PAGE,
   });
+  const [dragOverId, setDragOverId] = useState(null);
+  const dragOverRef = useRef(null);
 
   const { data, isLoading: isLoadingRecords } = useGetRecords({
     objectType,
     workspaceId,
     viewId,
     page: pagination.pageIndex + 1,
+    filters: currentFilters,
   });
 
   const recordTextAttributeId =
@@ -64,34 +81,25 @@ export const useRecordsTable = (objectType, workspaceId, viewId, views) => {
 
     setRowSelection(updatedSelection);
 
+    if (!data?.paginated) {
+      setSelectedRecords([]);
+      return;
+    }
+
     const selectedRowIds = Object.keys(updatedSelection).filter(
       (id) => updatedSelection[id],
     );
 
-    if (selectedRowIds.length > 0 && data?.paginated) {
-      const records = data.paginated.filter(
-        (record, index) => updatedSelection[index],
-      );
-
-      setSelectedRecords([...records]);
-    } else {
+    if (selectedRowIds.length === 0) {
       setSelectedRecords([]);
+      return;
     }
-  };
 
-  const handleFiltersChange = (filters) => {
-    if (
-      filters.length > 0 &&
-      filters.every(
-        (filter) => filter.attributeId && filter.operator && filter.value,
-      )
-    ) {
-      setCurrentFilters(filters);
-      setHasChanges(true);
-    } else if (filters.length === 0) {
-      setCurrentFilters(null);
-      setHasChanges(true);
-    }
+    const records = data.paginated.filter(
+      (record, index) => updatedSelection[index],
+    );
+
+    setSelectedRecords([...records]);
   };
 
   const handleSortingChange = (sort) => {
@@ -105,8 +113,13 @@ export const useRecordsTable = (objectType, workspaceId, viewId, views) => {
       workspaceId,
       objectType,
       page: pagination.pageIndex + 1,
-      currentFilters,
-      currentView,
+      currentView: {
+        ...currentView,
+        configuration: {
+          ...currentView.configuration,
+          filters: currentFilters,
+        },
+      },
     });
   };
 
@@ -133,20 +146,9 @@ export const useRecordsTable = (objectType, workspaceId, viewId, views) => {
 
     setVisibleColumns(updatedVisibleColumns);
 
-    const baseConfig = {
-      objectType,
-      workspaceId,
-      viewId,
-      page: pagination.pageIndex + 1,
-      configuration: {
-        ...initialConfig,
-        filters: currentFilters,
-        sorts: currentSort,
-        visibleColumns: updatedVisibleColumns,
-      },
-    };
-
-    saveView(baseConfig);
+    saveViewConfiguration({
+      visibleColumns: updatedVisibleColumns,
+    });
   };
 
   const handleHideColumn = (attributeId) => {
@@ -156,68 +158,48 @@ export const useRecordsTable = (objectType, workspaceId, viewId, views) => {
 
     setVisibleColumns(updatedVisibleColumns);
 
-    const baseConfig = {
-      objectType,
-      workspaceId,
-      viewId,
-      page: pagination.pageIndex + 1,
-      configuration: {
-        ...initialConfig,
-        filters: currentFilters,
-        sorts: currentSort,
-        visibleColumns: updatedVisibleColumns,
-      },
-    };
-
-    saveView(baseConfig);
-  };
-
-  const handleReorderColumns = (activeIndex, overIndex) => {
-    if (!visibleColumns || visibleColumns.length === 0) return;
-
-    const sortedColumns = sortVisibleColumnsByPosition(visibleColumns);
-
-    const reorderedColumns = [...sortedColumns];
-    const movedItem = reorderedColumns.splice(activeIndex, 1)[0];
-    reorderedColumns.splice(overIndex, 0, movedItem);
-
-    const updatedColumns = reorderedColumns.map((col, index) => ({
-      ...col,
-      position: String(index),
-    }));
-
-    setVisibleColumns(updatedColumns);
-
-    const baseConfig = {
-      objectType,
-      workspaceId,
-      viewId,
-      page: pagination.pageIndex + 1,
-      configuration: {
-        ...initialConfig,
-        filters: currentFilters,
-        sorts: currentSort,
-        visibleColumns: updatedColumns,
-      },
-    };
-
-    saveView(baseConfig);
+    saveViewConfiguration({
+      visibleColumns: updatedVisibleColumns,
+    });
   };
 
   const handleUpdateAttributeValue = (recordId, attributeId, value) => {
     updateValue({ recordId, attributeId, value });
   };
 
-  const saveConfiguration = () => {
+  const updateViewState = (updates) => {
+    if (updates.sorts !== undefined) {
+      setCurrentSort(updates.sorts);
+    }
+
+    if (updates.filters !== undefined) {
+      if (updates.filters.type === "group") {
+        setCurrentFilters(updates.filters);
+      }
+    }
+
+    if (updates.visibleColumns !== undefined) {
+      setVisibleColumns(updates.visibleColumns);
+    }
+
+    if (!updates.skipChangeTracking) {
+      setHasChanges(true);
+    } else {
+      setHasChanges(false);
+    }
+  };
+
+  const saveViewConfiguration = (customConfig = {}) => {
     const baseConfig = {
       objectType,
       workspaceId,
       viewId,
       page: pagination.pageIndex + 1,
       configuration: {
-        ...initialConfig,
         filters: currentFilters,
         sorts: currentSort,
+        visibleColumns,
+        ...customConfig,
       },
     };
 
@@ -226,41 +208,77 @@ export const useRecordsTable = (objectType, workspaceId, viewId, views) => {
     });
   };
 
-  const saveExistingView = () => {
-    saveConfiguration();
-  };
-
-  const sortVisibleColumnsByPosition = (columns) => {
-    if (!columns?.length) return [];
-
-    return [...columns].sort(
-      (a, b) => parseInt(a.position) - parseInt(b.position),
-    );
-  };
-
   const getVisibleAttributes = () => {
     if (!data?.paginated?.[0]) return [];
 
-    const firstRecord = data.paginated[0];
-    const attributes = firstRecord.object.attributes;
-
-    // Filter out archived attributes
-    const activeAttributes = attributes.filter((attr) => !attr.isArchived);
-
-    // Sort visibleColumns by position
-    const sortedVisibleColumns = sortVisibleColumnsByPosition(visibleColumns);
-
-    // Get ordered list of attribute IDs
-    const orderedAttributeIds = sortedVisibleColumns.map((col) => col.id);
-
-    return orderedAttributeIds
-      .map((id) => activeAttributes.find((attr) => attr.id === id))
-      .filter(Boolean)
-      .map((attr) => ({
-        id: attr.id,
-        name: attr.name,
-      }));
+    const attributes = getAttributesFromFirstRecord(data.paginated);
+    return filterVisibleAttributes(attributes, visibleColumns);
   };
+
+  const handleDragOver = useCallback((event) => {
+    const { active, over } = event;
+
+    if (!over || !active) {
+      if (dragOverRef.current !== null) {
+        dragOverRef.current = null;
+        setDragOverId(null);
+      }
+      return;
+    }
+
+    if (over.id !== dragOverRef.current) {
+      dragOverRef.current = over.id;
+
+      requestAnimationFrame(() => {
+        if (over.id === dragOverRef.current) {
+          setDragOverId(over.id);
+        }
+      });
+    }
+  }, []);
+
+  const handleDragEnd = useCallback(
+    (event) => {
+      setDragOverId(null);
+
+      const { active, over } = event;
+
+      if (!active || !over) return;
+      if (active.id === over.id) return;
+
+      const headerGroup = recordsTable.getHeaderGroups()[0];
+      const draggableColumns = getDraggableColumns(
+        headerGroup.headers,
+        recordTextAttributeId,
+      );
+      const draggableColumnIds = draggableColumns.map((col) => col.id);
+
+      if (
+        !draggableColumnIds.includes(active.id) ||
+        !draggableColumnIds.includes(over.id)
+      )
+        return;
+
+      const updatedColumns = reorderColumns(visibleColumns, active.id, over.id);
+
+      if (!updatedColumns) return;
+
+      setVisibleColumns(updatedColumns);
+      saveViewConfiguration({ visibleColumns: updatedColumns });
+    },
+    [visibleColumns, saveView, recordTextAttributeId],
+  );
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 10,
+        tolerance: 5,
+        delay: 0,
+      },
+    }),
+    useSensor(KeyboardSensor),
+  );
 
   const recordsTable = useReactTable({
     columns: columns({
@@ -274,8 +292,8 @@ export const useRecordsTable = (objectType, workspaceId, viewId, views) => {
       handleUpdateAttributeValue,
     }),
     manualPagination: true,
-    data: data?.paginated,
-    pageCount: data?.totalPages,
+    data: data?.paginated || [],
+    pageCount: data?.totalPages || 0,
     getCoreRowModel: getCoreRowModel(),
     onRowSelectionChange: handleRowSelectionChange,
     onPaginationChange: setPagination,
@@ -287,42 +305,40 @@ export const useRecordsTable = (objectType, workspaceId, viewId, views) => {
 
   const headerGroup = recordsTable.getHeaderGroups()[0];
 
-  const draggableColumns = headerGroup.headers.filter(
-    (header) =>
-      !header.id.includes("select") &&
-      !header.id.includes("add-column") &&
-      header.id !== recordTextAttributeId,
+  const draggableColumns = getDraggableColumns(
+    headerGroup.headers,
+    recordTextAttributeId,
   );
 
   const draggableColumnIds = draggableColumns.map((col) => col.id);
 
-  const handleDragEnd = (event) => {
-    const { active, over } = event;
+  // Update state when view changes
+  useEffect(() => {
+    if (!viewId || !views || views.length === 0) return;
 
-    if (
-      active &&
-      over &&
-      active.id !== over.id &&
-      draggableColumnIds.includes(active.id) &&
-      draggableColumnIds.includes(over.id)
-    ) {
-      const activeIndex = draggableColumnIds.indexOf(active.id);
-      const overIndex = draggableColumnIds.indexOf(over.id);
+    const updatedView = views.find((view) => view.id === viewId);
+    if (!updatedView) return;
 
-      if (activeIndex !== -1 && overIndex !== -1) {
-        handleReorderColumns(activeIndex, overIndex);
+    // Update filters
+    if (updatedView?.configuration?.filters) {
+      if (updatedView.configuration.filters.type === "group") {
+        setCurrentFilters(updatedView.configuration.filters);
+      } else {
+        console.warn(
+          "Invalid filter structure in view configuration:",
+          updatedView.configuration.filters,
+        );
       }
+    } else {
+      setCurrentFilters(createInitialFilterGroup());
     }
-  };
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8,
-      },
-    }),
-    useSensor(KeyboardSensor),
-  );
+    if (updatedView?.configuration?.visibleColumns) {
+      setVisibleColumns(updatedView.configuration.visibleColumns);
+    }
+
+    setHasChanges(false);
+  }, [viewId, views, objectType]);
 
   return {
     recordsTable,
@@ -331,17 +347,18 @@ export const useRecordsTable = (objectType, workspaceId, viewId, views) => {
     isLoadingRecords,
     isSavingView,
     hasChanges,
-    currentFilters,
     selectedRecords,
-    visibleAttributes: getVisibleAttributes(),
-    saveExistingView,
-    handleFiltersChange,
+    saveViewConfiguration,
     handleOpenNewViewModal,
     sensors,
     handleDragEnd,
+    handleDragOver,
+    dragOverId,
+    setDragOverId,
     draggableColumns,
     draggableColumnIds,
     columnSizing,
     recordTextAttributeId,
+    updateViewState,
   };
 };

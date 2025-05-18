@@ -18,11 +18,21 @@ body,
   cursor: col-resize;
   user-select: none;
   touch-action: none;
+  z-index: 20;
 }
 
 .resizer.isResizing {
   background: #09090b;
   opacity: 1;
+  width: 3px;
+}
+
+body:has(.resizer.isResizing) .resizer:not(.isResizing) {
+  opacity: 0 !important;
+}
+
+body:has(.resizer.isResizing) * {
+  cursor: col-resize !important;
 }
 
 @media (hover: hover) {

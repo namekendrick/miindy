@@ -8,11 +8,11 @@ function Table({ className, ...props }) {
   return (
     <div
       data-slot="table-container"
-      className="relative w-full overflow-x-auto"
+      className="relative h-full w-full overflow-x-auto"
     >
       <table
         data-slot="table"
-        className={cn("w-full caption-bottom text-sm", className)}
+        className={cn("h-full w-full caption-bottom text-sm", className)}
         {...props}
       />
     </div>
@@ -33,7 +33,7 @@ function TableBody({ className, ...props }) {
   return (
     <tbody
       data-slot="table-body"
-      className={cn("[&_tr:last-child]:border-0", className)}
+      className={cn("flex-1 [&_tr:last-child]:border-0", className)}
       {...props}
     />
   );

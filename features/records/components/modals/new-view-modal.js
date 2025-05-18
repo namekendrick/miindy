@@ -36,14 +36,7 @@ export const NewViewModal = () => {
   }, [modal.currentView]);
 
   const saveAsNewView = (values) => {
-    const {
-      viewId,
-      workspaceId,
-      page,
-      currentFilters,
-      currentView,
-      objectType,
-    } = modal;
+    const { viewId, workspaceId, page, currentView, objectType } = modal;
 
     saveView(
       {
@@ -53,7 +46,6 @@ export const NewViewModal = () => {
         page,
         configuration: {
           ...currentView.configuration,
-          filters: currentFilters,
         },
         createNewView: true,
         newViewName: values.name,

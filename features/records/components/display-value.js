@@ -1,6 +1,3 @@
-import { format } from "date-fns";
-import { Check, X } from "lucide-react";
-
 import { Badge } from "@/components/ui/badge";
 import {
   HoverCard,
@@ -8,52 +5,42 @@ import {
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
 import { RelatedRecordBadge } from "@/features/records/components/related-record-badge";
+import {
+  formatDateValue,
+  formatStatusValue,
+  formatCurrencyValue,
+  isRecordTextAttribute,
+} from "@/features/records/utils/value-formatters";
 
 export const DisplayValue = ({ value, attribute, recordId }) => {
   const attributeType = attribute.attributeType;
-  const isRecordTextAttribute =
-    attribute.id === attribute?.object?.recordTextAttributeId;
 
-  if (isRecordTextAttribute) {
-    return (
-      <HoverCard>
-        <HoverCardTrigger asChild>
-          <span className="cursor-help underline decoration-dotted">
-            {value}
-          </span>
-        </HoverCardTrigger>
-        <HoverCardContent align="start" className="w-80">
-          <div className="space-y-2">
-            <h4 className="text-sm font-semibold">Record Title</h4>
-            <p className="text-muted-foreground text-sm">{value}</p>
-          </div>
-        </HoverCardContent>
-      </HoverCard>
-    );
+  if (isRecordTextAttribute(attribute)) {
+    return <RecordTextDisplay value={value} />;
   }
 
   switch (attributeType) {
-    case "DATE":
-      try {
-        return <span>{format(new Date(value), "PPP")}</span>;
-      } catch (error) {
-        return <span>{value}</span>;
-      }
-
-    case "TIMESTAMP":
-      try {
-        return <span>{format(new Date(value), "PPP p")}</span>;
-      } catch (error) {
-        return <span>{value}</span>;
-      }
+    case "DATETIME":
+      return <span className="select-none">{formatDateValue(value)}</span>;
 
     case "STATUS":
+      const formattedStatus = formatStatusValue(
+        value,
+        attribute.config?.options,
+      );
+      if (!formattedStatus) return null;
+
       return (
-        value && (
-          <Badge className="bg-primary/5 text-primary hover:bg-primary/10 w-full rounded-xs">
-            {value}
-          </Badge>
-        )
+        <Badge
+          variant="outline"
+          className="flex max-w-full items-center gap-1.5 rounded-md px-2 py-0.5 font-medium"
+        >
+          <div
+            className="h-2.5 w-2.5 flex-shrink-0 rounded-full"
+            style={{ backgroundColor: formattedStatus.color }}
+          />
+          <span className="truncate">{formattedStatus.value}</span>
+        </Badge>
       );
 
     case "RELATIONSHIP":
@@ -67,7 +54,7 @@ export const DisplayValue = ({ value, attribute, recordId }) => {
       );
 
     case "CURRENCY":
-      return <span>${parseFloat(value).toFixed(2)}</span>;
+      return <span>{formatCurrencyValue(value)}</span>;
 
     case "NUMBER":
     case "RATING":
@@ -77,3 +64,19 @@ export const DisplayValue = ({ value, attribute, recordId }) => {
       return <span>{value}</span>;
   }
 };
+
+const RecordTextDisplay = ({ value }) => (
+  <HoverCard>
+    <HoverCardTrigger asChild>
+      <span className="cursor-help underline decoration-dotted select-none">
+        {value}
+      </span>
+    </HoverCardTrigger>
+    <HoverCardContent align="start" className="w-80 select-text">
+      <div className="space-y-2">
+        <h4 className="text-sm font-semibold">Record Title</h4>
+        <p className="text-muted-foreground text-sm">{value}</p>
+      </div>
+    </HoverCardContent>
+  </HoverCard>
+);

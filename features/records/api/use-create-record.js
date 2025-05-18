@@ -18,8 +18,7 @@ export const useCreateRecord = () => {
     onSuccess: () => {
       queryClient.invalidateQueries();
     },
-    onError: (error) => {
-      console.log(error);
+    onError: () => {
       toast.error("Something went wrong");
     },
   });
