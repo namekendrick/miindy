@@ -1,4 +1,6 @@
-![Miindy1](https://ucarecdn.com/c55b9789-d1bb-47ae-9ded-57f70346c564/Miindy1.png)
+![Miindy1](https://ucarecdn.com/4ef9dce6-e83e-49b0-a8ca-75437fd52d9e/Miindy1.png)
+
+![Miindy6](https://ucarecdn.com/3eb9538a-a89c-4cf1-8082-c7e94815bdc7/Miindy6.png)
 
 ![Miindy2](https://ucarecdn.com/3e90aa09-c98c-494a-8308-b8316a5cc7df/Miindy2.png)
 
