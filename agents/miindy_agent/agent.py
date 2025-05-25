@@ -30,7 +30,7 @@ auth_scheme = HTTPBearer()
 
 @app.function(image=scraper_image)
 def scrape_webpage(url: str) -> Dict[str, Any]:
-    from bs4 import BeautifulSoup
+    from bs4 import BeautifulSoup # type: ignore
 
     import requests
     import re
@@ -96,9 +96,9 @@ def scrape_webpage(url: str) -> Dict[str, Any]:
 
 @app.function(image=agent_image, secrets=[modal.Secret.from_name("miindy-secret")])
 def summarize_with_miindy_agent(webpage_content: Dict[str, Any]) -> Dict[str, str]:
-    from google.adk.agents import Agent
-    from google.adk.runners import InMemoryRunner
-    from google.genai.types import Part, UserContent
+    from google.adk.agents import Agent # type: ignore
+    from google.adk.runners import InMemoryRunner # type: ignore
+    from google.genai.types import Part, UserContent # type: ignore
 
     url = webpage_content["url"]
     title = webpage_content["title"]

@@ -1,15 +1,13 @@
 import {
-  BookOpen,
   Box,
   CalendarSync,
   CreditCard,
   FileUser,
   Handshake,
   Home,
-  Mail,
+  Layers,
   Palette,
   PanelsTopLeft,
-  Play,
   Store,
   User,
   Users,
@@ -22,19 +20,9 @@ export const navMain = [
     icon: Home,
   },
   {
-    title: "Email",
-    url: "email",
-    icon: Mail,
-  },
-  {
-    title: "Playbooks",
-    url: "playbooks",
-    icon: BookOpen,
-  },
-  {
     title: "Workflows",
     url: "workflows",
-    icon: Play,
+    icon: Layers,
   },
 ];
 
