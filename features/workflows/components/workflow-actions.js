@@ -1,4 +1,4 @@
-import { MoreVerticalIcon, TrashIcon } from "lucide-react";
+import { CopyIcon, MoreVerticalIcon, TrashIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -7,11 +7,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Separator } from "@/components/ui/separator";
 import { TooltipWrapper } from "@/components/ui/tooltip-wrapper";
 import { useDeleteWorkflowModal } from "@/features/workflows/hooks/use-delete-workflow-modal";
+import { useDuplicateWorkflowModal } from "@/features/workflows/hooks/use-duplicate-workflow-modal";
 
 export const WorkflowActions = ({ workflow }) => {
   const openDeleteWorkflowModal = useDeleteWorkflowModal(
+    (state) => state.onOpen,
+  );
+  const openDuplicateWorkflowModal = useDuplicateWorkflowModal(
     (state) => state.onOpen,
   );
 
@@ -27,6 +32,16 @@ export const WorkflowActions = ({ workflow }) => {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
+        <DropdownMenuItem
+          className="flex items-center gap-2"
+          onSelect={() => {
+            openDuplicateWorkflowModal({ workflow });
+          }}
+        >
+          <CopyIcon size={16} />
+          Duplicate
+        </DropdownMenuItem>
+        <Separator />
         <DropdownMenuItem
           className="text-destructive flex items-center gap-2"
           onSelect={() => {

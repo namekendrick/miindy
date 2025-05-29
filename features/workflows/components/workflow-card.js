@@ -52,8 +52,8 @@ export const WorkflowCard = ({ workflow }) => {
             <ScheduleSection
               isDraft={isDraft}
               creditsCost={workflow.creditsCost}
-              workflowId={workflow.id}
               cron={workflow.cron}
+              workflowId={workflow.id}
             />
           </div>
         </div>

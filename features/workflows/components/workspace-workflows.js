@@ -43,7 +43,7 @@ export const WorkspaceWorkflows = ({ workspaceId }) => {
   return (
     <div className="flex flex-col">
       <WorkflowsPageHeader workspaceId={workspaceId} />
-      <div>
+      <div className="flex flex-col gap-y-4">
         {data.map((workflow) => (
           <WorkflowCard key={workflow.id} workflow={workflow} />
         ))}
