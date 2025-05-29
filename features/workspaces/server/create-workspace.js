@@ -24,6 +24,13 @@ export const createWorkspace = async (values) => {
       data: { name },
     });
 
+    await prisma.workspaceBalance.create({
+      data: {
+        workspaceId: workspace.id,
+        credits: 100,
+      },
+    });
+
     const updated = await prisma.workspace.update({
       where: { id: workspace.id },
       data: {

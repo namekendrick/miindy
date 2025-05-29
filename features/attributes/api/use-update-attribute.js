@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 import { updateAttribute } from "@/features/attributes/server/update-attribute";
-import { toast } from "sonner";
 
 export const useUpdateAttribute = () => {
   const queryClient = useQueryClient();

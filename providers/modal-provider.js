@@ -8,6 +8,7 @@ import { CreateViewModal } from "@/features/records/components/modals/create-vie
 import { DeleteViewModal } from "@/features/records/components/modals/delete-view-modal";
 import { NewViewModal } from "@/features/records/components/modals/new-view-modal";
 import { RenameViewModal } from "@/features/records/components/modals/rename-view-modal";
+import { CreateWorkflowModal } from "@/features/workflows/components/modals/create-workflow-modal";
 import { WorkspaceModal } from "@/features/workspaces/components/workspace-modal";
 
 export const ModalProvider = () => {
@@ -29,6 +30,7 @@ export const ModalProvider = () => {
       <DeleteViewModal />
       <NewViewModal />
       <RenameViewModal />
+      <CreateWorkflowModal />
       <WorkspaceModal />
     </>
   );

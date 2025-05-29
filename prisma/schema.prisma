@@ -28,12 +28,14 @@ model Workspace {
   id          String        @id @default(cuid())
   name        String
   logo        String?
+  credits     Int           @default(0)
   plan        WorkspacePlan @default(FREE)
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
   objects     Object[]
   permissions Permission[]
   views       View[]
+  workflows   Workflow[]
 }
 
 model Permission {
@@ -265,6 +267,61 @@ model ViewFavorite {
   @@index([userId])
 }
 
+model Workflow {
+  id            String              @id @default(cuid())
+  name          String
+  description   String?
+  userId        String
+  workspaceId   String
+  definition    String?
+  executionPlan String?
+  creditsCost   Int                 @default(0)
+  cron          String?
+  status        WorkflowStatus      @default(DRAFT)
+  lastRunAt     DateTime?
+  lastRunId     String?
+  lastRunStatus String?
+  nextRunAt     DateTime?
+  createdAt     DateTime            @default(now())
+  updateAt      DateTime            @updatedAt
+  executions    WorkflowExecution[]
+  workspace     Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([name, userId])
+}
+
+model WorkflowExecution {
+  id              String           @id @default(cuid())
+  workflowId      String
+  userId          String
+  trigger         String
+  status          String
+  createdAt       DateTime         @default(now())
+  startedAt       DateTime?
+  completedAt     DateTime?
+  definition      String           @default("{}")
+  creditsConsumed Int              @default(0)
+  phases          ExecutionPhase[]
+  workflow        Workflow         @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+}
+
+model ExecutionPhase {
+  id                  String            @id @default(cuid())
+  userId              String
+  status              String
+  number              Int
+  node                String
+  name                String
+  startedAt           DateTime?
+  completedAt         DateTime?
+  inputs              String?
+  outputs             String?
+  creditsConsumed     Int?
+  workflowExecutionId String
+  logs                ExecutionLog[]
+  execution           WorkflowExecution @relation(fields: [workflowExecutionId], references: [id], onDelete: Cascade)
+}
+
 model Account {
   id                String  @id @default(cuid())
   userId            String
@@ -281,6 +338,50 @@ model Account {
   user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
+}
+
+model ExecutionLog {
+  id               String         @id @default(cuid())
+  logLevel         String
+  message          String
+  timestamp        DateTime       @default(now())
+  executionPhaseId String
+  executionPhase   ExecutionPhase @relation(fields: [executionPhaseId], references: [id], onDelete: Cascade)
+}
+
+model Credential {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  value     String
+  createdAt DateTime @default(now())
+  updateAt  DateTime @updatedAt
+
+  @@unique([userId, name])
+}
+
+model WorkspaceBalance {
+  id          String   @id @default(cuid())
+  workspaceId String
+  credits     Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([workspaceId])
+}
+
+model WorkspacePurchase {
+  id          String   @id @default(cuid())
+  workspaceId String
+  stripeId    String
+  description String
+  amount      Int
+  currency    String
+  date        DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([workspaceId, stripeId])
 }
 
 model InviteToken {
@@ -379,4 +480,9 @@ enum RelationshipType {
   ONE_TO_ONE
   MANY_TO_MANY
   MANY_TO_ONE
+}
+
+enum WorkflowStatus {
+  DRAFT
+  PUBLISHED
 }

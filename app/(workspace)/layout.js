@@ -27,6 +27,8 @@ export default async function WorkspaceLayout({ children }) {
   const pathname = headerList.get("x-current-path");
   const workspaceId = pathname.split("/")[2];
   const isSettings = pathname.includes("/settings");
+  const isWorkflowEditor =
+    pathname.includes("/workflows/") && pathname.split("/").length > 4;
   const workspaces = await getCurrentUsersWorkspaces();
   const active = await getWorkspaceById(workspaceId);
   const cookieStore = await cookies();
@@ -39,6 +41,8 @@ export default async function WorkspaceLayout({ children }) {
 
     if (!hasAccess) redirect("/workspace");
   }
+
+  if (isWorkflowEditor) return children;
 
   return (
     <SidebarProvider defaultOpen={isSettings ? true : defaultOpen}>
