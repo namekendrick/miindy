@@ -10,6 +10,7 @@ import { NewViewModal } from "@/features/records/components/modals/new-view-moda
 import { RenameViewModal } from "@/features/records/components/modals/rename-view-modal";
 import { CreateWorkflowModal } from "@/features/workflows/components/modals/create-workflow-modal";
 import { WorkspaceModal } from "@/features/workspaces/components/workspace-modal";
+import { DeleteWorkflowModal } from "@/features/workflows/components/modals/delete-workflow-modal";
 
 export const ModalProvider = () => {
   const [isMounted, setIsMounted] = useState(false);
@@ -31,6 +32,7 @@ export const ModalProvider = () => {
       <NewViewModal />
       <RenameViewModal />
       <CreateWorkflowModal />
+      <DeleteWorkflowModal />
       <WorkspaceModal />
     </>
   );

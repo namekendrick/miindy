@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { CoinsIcon } from "lucide-react";
 
 import { ReactCountUpWrapper } from "@/components/react-count-up-wrapper";
@@ -12,7 +11,7 @@ function AvailableCreditsBadge({ workspaceId }) {
   const { data, isLoading } = useGetWorkspaceBalance({ workspaceId });
 
   return (
-    <Link
+    <a
       href={`/workspace/${workspaceId}/settings/billing`}
       className={cn(
         "w-full items-center",
@@ -25,7 +24,7 @@ function AvailableCreditsBadge({ workspaceId }) {
         {!isLoading && data && <ReactCountUpWrapper value={data} />}
         {!isLoading && data === undefined && "-"}
       </span>
-    </Link>
+    </a>
   );
 }
 

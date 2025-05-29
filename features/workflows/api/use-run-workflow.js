@@ -7,14 +7,16 @@ export const useRunWorkflow = () => {
   const queryClient = useQueryClient();
 
   const mutation = useMutation({
-    mutationFn: async (values) => {
-      const response = await runWorkflow(values);
-      toast.success(response.message);
+    mutationFn: (values) => {
+      const response = runWorkflow(values);
 
-      if (response.status !== 200 && response.status !== 201)
-        throw new Error(response.message);
+      toast.promise(response, {
+        loading: "Scheduling run...",
+        success: (data) => data.message,
+        error: (error) => error.message,
+      });
 
-      return response.data;
+      return response;
     },
     onSuccess: () => {
       queryClient.invalidateQueries();

@@ -2,7 +2,6 @@
 
 import { useReactFlow } from "@xyflow/react";
 import { UploadIcon } from "lucide-react";
-import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { usePublishWorkflow } from "@/features/workflows/api/use-publish-workflow";
@@ -27,7 +26,6 @@ export const PublishButton = ({ workflowId }) => {
           return;
         }
 
-        toast.loading("Publishing workflow...", { id: workflowId });
         publishWorkflow({
           id: workflowId,
           flowDefinition: JSON.stringify(toObject()),

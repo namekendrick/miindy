@@ -7,14 +7,16 @@ export const useUnpublishWorkflow = () => {
   const queryClient = useQueryClient();
 
   const mutation = useMutation({
-    mutationFn: async (values) => {
-      const response = await unpublishWorkflow(values);
-      toast.success(response.message);
+    mutationFn: (values) => {
+      const response = unpublishWorkflow(values);
 
-      if (response.status !== 200 && response.status !== 201)
-        throw new Error(response.message);
+      toast.promise(response, {
+        loading: "Unpublishing workflow...",
+        success: (data) => data.message,
+        error: (error) => error.message,
+      });
 
-      return response.data;
+      return response;
     },
     onSuccess: () => {
       queryClient.invalidateQueries();

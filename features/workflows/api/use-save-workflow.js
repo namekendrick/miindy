@@ -7,7 +7,7 @@ export const useSaveWorkflow = () => {
   const queryClient = useQueryClient();
 
   const mutation = useMutation({
-    mutationFn: async (values) => {
+    mutationFn: (values) => {
       const response = saveWorkflow(values);
 
       toast.promise(response, {
