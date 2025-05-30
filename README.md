@@ -1,3 +1,11 @@
+![Miindy7](https://ucarecdn.com/c8c61a36-70f4-4528-bcca-e02d232edf63/Miindy7.png)
+
+![Miindy8](https://ucarecdn.com/52a11f06-f466-41a9-87ca-4148d5540d3a/Miindy8.png)
+
+![Miindy9](https://ucarecdn.com/d01de6ef-609b-4605-92c6-043d5ddc6903/Miindy9.png)
+
+![Miindy10](https://ucarecdn.com/c3e338d2-86c2-4deb-b835-fa88c51de99d/Miindy10.png)
+
 ![Miindy1](https://ucarecdn.com/4ef9dce6-e83e-49b0-a8ca-75437fd52d9e/Miindy1.png)
 
 ![Miindy6](https://ucarecdn.com/3eb9538a-a89c-4cf1-8082-c7e94815bdc7/Miindy6.png)
