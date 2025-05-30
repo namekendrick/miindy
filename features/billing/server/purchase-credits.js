@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 
+import { getCreditsPack } from "@/features/billing/utils/get-credits-pack";
 import { currentUser } from "@/lib/auth";
 import { stripe } from "@/lib/stripe";
 import { absoluteUrl } from "@/lib/utils";
@@ -13,17 +14,15 @@ export async function purchaseCredits(values) {
   const { workspaceId, packId } = values;
 
   const selectedPack = getCreditsPack(packId);
-  if (!selectedPack) {
-    throw new Error("Invalid pack");
-  }
+  if (!selectedPack) throw new Error("Invalid pack");
 
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
     invoice_creation: {
       enabled: true,
     },
-    success_url: absoluteUrl("/billing"),
-    cancel_url: absoluteUrl("/billing"),
+    success_url: absoluteUrl(`/workspace/${workspaceId}/settings/billing`),
+    cancel_url: absoluteUrl(`/workspace/${workspaceId}/settings/billing`),
     metadata: {
       workspaceId,
       packId,

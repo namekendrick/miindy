@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/table";
 import { useGetExecutions } from "@/features/workflows/api/use-get-executions";
 import { ExecutionStatusIndicator } from "@/features/workflows/components/execution-status-indicator";
-import { DatesToDurationString } from "@/lib/utils/dates";
+import { datesToDurationString } from "@/lib/utils/dates";
 
 export const ExecutionsTable = ({ workspaceId, workflowId, initialData }) => {
   const router = useRouter();
@@ -41,7 +41,7 @@ export const ExecutionsTable = ({ workspaceId, workflowId, initialData }) => {
         <TableBody className="h-full gap-2 overflow-auto">
           {executions &&
             executions.map((execution) => {
-              const duration = DatesToDurationString(
+              const duration = datesToDurationString(
                 execution.completedAt,
                 execution.startedAt,
               );

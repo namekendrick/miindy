@@ -7,7 +7,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { useGetWorkspaceBalance } from "@/features/billing/api/use-get-workspace-balance";
 import { cn } from "@/lib/utils";
 
-function AvailableCreditsBadge({ workspaceId }) {
+export const AvailableCreditsBadge = ({ workspaceId }) => {
   const { data, isLoading } = useGetWorkspaceBalance({ workspaceId });
 
   return (
@@ -26,6 +26,4 @@ function AvailableCreditsBadge({ workspaceId }) {
       </span>
     </a>
   );
-}
-
-export default AvailableCreditsBadge;
+};

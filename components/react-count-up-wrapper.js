@@ -10,7 +10,7 @@ export const ReactCountUpWrapper = ({ value }) => {
     setMounted(true);
   }, []);
 
-  if (!mounted) return "-";
+  if (!mounted) return "0";
 
   return <CountUp duration={0.5} preserveValue end={value} decimals={0} />;
 };

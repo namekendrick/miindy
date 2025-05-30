@@ -10,6 +10,15 @@ export async function downloadInvoice(values) {
 
   const { id, workspaceId } = values;
 
+  const permission = await prisma.permission.findFirst({
+    where: {
+      userId: user.id,
+      workspaceId,
+    },
+  });
+
+  if (!permission) return { status: 401, message: "Unauthorized!" };
+
   const purchase = await prisma.workspacePurchase.findUnique({
     where: {
       id,

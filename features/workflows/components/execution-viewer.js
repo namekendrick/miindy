@@ -35,7 +35,7 @@ import { useGetExecution } from "@/features/workflows/api/use-get-execution";
 import { useGetWorkflowPhaseDetails } from "@/features/workflows/api/use-get-workflow";
 import { PhaseStatusBadge } from "@/features/workflows/components/phase-status-badge";
 import { getPhasesTotalCost } from "@/features/workflows/utils/get-phases-total-cost";
-import { DatesToDurationString } from "@/lib/utils/dates";
+import { datesToDurationString } from "@/lib/utils/dates";
 import { cn } from "@/lib/utils";
 
 export const ExecutionViewer = ({ workflowId, initialData }) => {
@@ -82,7 +82,7 @@ export const ExecutionViewer = ({ workflowId, initialData }) => {
     setSelectedPhase(phaseToSelect.id);
   }, [execution?.phases, isRunning, setSelectedPhase]);
 
-  const duration = DatesToDurationString(
+  const duration = datesToDurationString(
     execution?.completedAt,
     execution?.startedAt,
   );
@@ -201,7 +201,7 @@ export const ExecutionViewer = ({ workflowId, initialData }) => {
                   <span>Duration</span>
                 </div>
                 <span>
-                  {DatesToDurationString(
+                  {datesToDurationString(
                     phaseDetails.completedAt,
                     phaseDetails.startedAt,
                   ) || "-"}

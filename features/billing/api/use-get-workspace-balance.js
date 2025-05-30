@@ -4,10 +4,11 @@ import { getWorkspaceBalance } from "@/db/billing";
 
 export const useGetWorkspaceBalance = (values) => {
   const { data, isLoading } = useQuery({
-    queryKey: ["workspace-balance"],
+    queryKey: ["workspace-balance", values.workspaceId],
     queryFn: () => {
       return getWorkspaceBalance(values);
     },
+    enabled: !!values.workspaceId,
     refetchInterval: 30 * 1000,
   });
 

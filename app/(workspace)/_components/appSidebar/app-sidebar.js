@@ -11,7 +11,7 @@ import {
   SidebarHeader,
 } from "@/components/ui/sidebar";
 import { navMain, navRecords } from "@/constants/menus";
-import AvailableCreditsBadge from "@/features/billing/components/available-credits-badge";
+import { AvailableCreditsBadge } from "@/features/billing/components/available-credits-badge";
 
 export const AppSidebar = ({ user, workspaces, active }) => {
   return (
