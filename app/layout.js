@@ -5,6 +5,7 @@ import { auth } from "@/auth";
 import { Toaster } from "@/components/ui/sonner";
 import { ModalProvider } from "@/providers/modal-provider";
 import { QueryProvider } from "@/providers/query-provider";
+import { SegmentProvider } from "@/providers/segment-provider";
 
 import "./globals.css";
 
@@ -31,6 +32,7 @@ export default async function RootLayout({ children }) {
             <Toaster />
           </QueryProvider>
         </body>
+        <SegmentProvider />
       </html>
     </SessionProvider>
   );

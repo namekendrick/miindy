@@ -4,6 +4,7 @@ import {
   CreditCard,
   FileUser,
   Handshake,
+  Zap,
   Home,
   Layers,
   Palette,
@@ -90,6 +91,11 @@ export const workspaceSettings = [
     title: "Members",
     url: "settings/members",
     icon: Users,
+  },
+  {
+    title: "Integrations",
+    url: "settings/integrations",
+    icon: Zap,
   },
   {
     title: "Billing",

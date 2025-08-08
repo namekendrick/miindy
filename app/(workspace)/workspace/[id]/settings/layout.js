@@ -23,7 +23,7 @@ export default async function SettingsLayout({ children }) {
         <>
           <div className="flex flex-col gap-2">
             <h1 className="text-2xl font-semibold">{basePathFormatted}</h1>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               {(() => {
                 switch (basePathFormatted) {
                   case "Profile":
@@ -36,6 +36,8 @@ export default async function SettingsLayout({ children }) {
                     return "Change the settings for your current workspace";
                   case "Members":
                     return "Manage workspace members, set access levels, and invite new users within your plan limits";
+                  case "Integrations":
+                    return "Connect Miindy to your team's favorite tools";
                   case "Billing":
                     return "Update your payment information or switch plans according to your needs";
                   case "Objects":
