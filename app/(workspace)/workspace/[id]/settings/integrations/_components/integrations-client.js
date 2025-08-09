@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useParagon } from "@/hooks/use-paragon";
+import { useParagon } from "@/features/integrations/hooks/use-paragon";
 
 export const IntegrationsClient = ({ paragonUserToken, tokenError }) => {
   const [isMounted, setIsMounted] = useState(false);

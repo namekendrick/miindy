@@ -1,6 +1,7 @@
 "use server";
 
 import jwt from "jsonwebtoken";
+
 import { currentUser } from "@/lib/auth";
 
 export async function generateParagonUserToken() {

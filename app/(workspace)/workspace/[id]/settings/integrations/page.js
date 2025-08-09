@@ -1,5 +1,5 @@
 import { IntegrationsClient } from "./_components/integrations-client";
-import { generateParagonUserToken } from "@/lib/paragon-auth";
+import { generateParagonUserToken } from "@/features/integrations/server/paragon-auth";
 
 export default async function IntegrationsSettingsPage() {
   const tokenResult = await generateParagonUserToken();
