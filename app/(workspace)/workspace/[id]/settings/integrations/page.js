@@ -1,4 +1,4 @@
-import { IntegrationsClient } from "./_components/integrations-client";
+import { IntegrationsClient } from "@/app/(workspace)/workspace/[id]/settings/integrations/_components/integrations-client";
 import { generateParagonUserToken } from "@/features/integrations/server/paragon-auth";
 
 export default async function IntegrationsSettingsPage() {

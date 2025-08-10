@@ -8,16 +8,19 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useParagon } from "@/features/integrations/hooks/use-paragon";
+import { useWorkspaceId } from "@/features/workspaces/hooks/use-workspace-id";
 
 export const IntegrationsClient = ({ paragonUserToken, tokenError }) => {
+  const workspaceId = useWorkspaceId();
   const [isMounted, setIsMounted] = useState(false);
-  const { paragon, user, error } = useParagon(paragonUserToken);
+  const { paragon, user, error } = useParagon(paragonUserToken, workspaceId);
 
   useEffect(() => setIsMounted(true), []);
 
   const getIntegrationsWithState = () => {
     try {
       const integrationMetadata = paragon.getIntegrationMetadata();
+
       return integrationMetadata.map((integration) => ({
         ...integration,
         connected: user?.integrations?.[integration.type]?.enabled || false,

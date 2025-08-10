@@ -1,29 +1,53 @@
 import { paragon, SDK_EVENT } from "@useparagon/connect";
 import { useCallback, useEffect, useState } from "react";
 
+import { useEnableSync } from "@/features/integrations/api/use-enable-sync";
+
 if (typeof window !== "undefined") window.paragon = paragon;
 
-export const useParagon = (paragonUserToken) => {
+export const useParagon = (paragonUserToken, workspaceId) => {
   const [user, setUser] = useState(paragon.getUser());
   const [error, setError] = useState(null);
+  const { handleEnableSync } = useEnableSync();
 
   const updateUser = useCallback(() => {
     const authedUser = paragon.getUser();
     setUser({ ...authedUser });
   }, []);
 
-  // Listen for integration state changes
+  const handleIntegrationInstall = useCallback(
+    async (integrationData) => {
+      updateUser();
+
+      if (integrationData?.integrationType === "hubspot") {
+        await handleEnableSync(
+          "hubspot",
+          "contacts",
+          {},
+          "HubSpot Contacts Sync",
+          workspaceId,
+        );
+      }
+    },
+    [updateUser, handleEnableSync, workspaceId],
+  );
+
   useEffect(() => {
-    paragon.subscribe(SDK_EVENT.ON_INTEGRATION_INSTALL, updateUser);
+    paragon.subscribe(
+      SDK_EVENT.ON_INTEGRATION_INSTALL,
+      handleIntegrationInstall,
+    );
     paragon.subscribe(SDK_EVENT.ON_INTEGRATION_UNINSTALL, updateUser);
 
     return () => {
-      paragon.unsubscribe(SDK_EVENT.ON_INTEGRATION_INSTALL, updateUser);
+      paragon.unsubscribe(
+        SDK_EVENT.ON_INTEGRATION_INSTALL,
+        handleIntegrationInstall,
+      );
       paragon.unsubscribe(SDK_EVENT.ON_INTEGRATION_UNINSTALL, updateUser);
     };
-  }, [updateUser]);
+  }, [handleIntegrationInstall, updateUser]);
 
-  // Authenticate user when token is provided
   useEffect(() => {
     if (!paragonUserToken) return;
 
@@ -47,6 +71,5 @@ export const useParagon = (paragonUserToken) => {
     paragon,
     user,
     error,
-    updateUser,
   };
 };
