@@ -10,69 +10,42 @@ import {
 } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { FocusedNodeConfig } from "@/features/workflows/components/focused-node-config";
 import { TASK_REGISTRY } from "@/features/workflows/constants/registry";
+import { useFocusedNode } from "@/features/workflows/hooks/use-focused-node";
 
 export const TaskMenu = () => {
+  const { focusedNodeId } = useFocusedNode();
+
   return (
-    <aside className="h-full w-[340px] max-w-[340px] min-w-[340px] border-separate overflow-auto border-r-2 p-2 px-4">
-      <Accordion
-        type="multiple"
-        className="w-full"
-        defaultValue={[
-          "extraction",
-          "interactions",
-          "timing",
-          "results",
-          "storage",
-        ]}
-      >
-        <AccordionItem value="interactions">
-          <AccordionTrigger className="font-bold">
-            User interactions
-          </AccordionTrigger>
-          <AccordionContent className="flex flex-col gap-1">
-            <TaskMenuBtn taskType="NAVIGATE_URL" />
-            <TaskMenuBtn taskType="FILL_INPUT" />
-            <TaskMenuBtn taskType="CLICK_ELEMENT" />
-            <TaskMenuBtn taskType="SCROLL_TO_ELEMENT" />
-          </AccordionContent>
-        </AccordionItem>
-        <AccordionItem value="extraction">
-          <AccordionTrigger className="font-bold">
-            Data extraction
-          </AccordionTrigger>
-          <AccordionContent className="flex flex-col gap-1">
-            <TaskMenuBtn taskType="PAGE_TO_HTML" />
-            <TaskMenuBtn taskType="EXTRACT_TEXT_FROM_ELEMENT" />
-            <TaskMenuBtn taskType="EXTRACT_DATA_WITH_AI" />
-          </AccordionContent>
-        </AccordionItem>
-        <AccordionItem value="storage">
-          <AccordionTrigger className="font-bold">
-            Data storage
-          </AccordionTrigger>
-          <AccordionContent className="flex flex-col gap-1">
-            <TaskMenuBtn taskType="READ_PROPERTY_FROM_JSON" />
-            <TaskMenuBtn taskType="ADD_PROPERTY_TO_JSON" />
-          </AccordionContent>
-        </AccordionItem>
-        <AccordionItem value="timing">
-          <AccordionTrigger className="font-bold">
-            Timing controls
-          </AccordionTrigger>
-          <AccordionContent className="flex flex-col gap-1">
-            <TaskMenuBtn taskType="WAIT_FOR_ELEMENT" />
-          </AccordionContent>
-        </AccordionItem>
-        <AccordionItem value="results">
-          <AccordionTrigger className="font-bold">
-            Result delivery
-          </AccordionTrigger>
-          <AccordionContent className="flex flex-col gap-1">
-            <TaskMenuBtn taskType="DELIVER_VIA_WEBHOOK" />
-          </AccordionContent>
-        </AccordionItem>
-      </Accordion>
+    <aside className="h-full w-[340px] max-w-[340px] min-w-[340px] border-separate overflow-auto border-r-2">
+      {focusedNodeId ? (
+        <FocusedNodeConfig />
+      ) : (
+        <div className="p-2 px-4">
+          <Accordion
+            type="multiple"
+            className="w-full"
+            defaultValue={["triggers", "blocks"]}
+          >
+            <AccordionItem value="triggers">
+              <AccordionTrigger className="font-bold">
+                Triggers
+              </AccordionTrigger>
+              <AccordionContent className="flex flex-col gap-1">
+                <TaskMenuBtn taskType="MANUALLY_RUN" />
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="blocks">
+              <AccordionTrigger className="font-bold">Blocks</AccordionTrigger>
+              <AccordionContent className="flex flex-col gap-1">
+                <TaskMenuBtn taskType="RANDOM_NUMBER" />
+                <TaskMenuBtn taskType="UPDATE_RECORD" />
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+        </div>
+      )}
     </aside>
   );
 };

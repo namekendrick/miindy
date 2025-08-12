@@ -1,14 +1,14 @@
 import { TASK_REGISTRY } from "@/features/workflows/constants/registry";
 
 export const flowToExecutionPlan = (nodes, edges) => {
-  const entryPoint = nodes.find(
-    (node) => TASK_REGISTRY[node.data.type].isEntryPoint,
+  const triggerNode = nodes.find(
+    (node) => TASK_REGISTRY[node.data.type].isTrigger,
   );
 
-  if (!entryPoint) {
+  if (!triggerNode) {
     return {
       error: {
-        type: "NO_ENTRY_POINT",
+        type: "NO_TRIGGER",
       },
     };
   }
@@ -16,10 +16,10 @@ export const flowToExecutionPlan = (nodes, edges) => {
   const inputsWithErrors = [];
   const planned = new Set();
 
-  const invalidInputs = getInvalidInputs(entryPoint, edges, planned);
+  const invalidInputs = getInvalidInputs(triggerNode, edges, planned);
   if (invalidInputs.length > 0) {
     inputsWithErrors.push({
-      nodeId: entryPoint.id,
+      nodeId: triggerNode.id,
       inputs: invalidInputs,
     });
   }
@@ -27,11 +27,11 @@ export const flowToExecutionPlan = (nodes, edges) => {
   const executionPlan = [
     {
       phase: 1,
-      nodes: [entryPoint],
+      nodes: [triggerNode],
     },
   ];
 
-  planned.add(entryPoint.id);
+  planned.add(triggerNode.id);
 
   for (
     let phase = 2;
@@ -86,42 +86,32 @@ export const flowToExecutionPlan = (nodes, edges) => {
 const getInvalidInputs = (node, edges, planned) => {
   const invalidInputs = [];
   const inputs = TASK_REGISTRY[node.data.type].inputs;
+
+  // Check if node has incoming connection
+  const hasIncomingConnection = edges.some((edge) => edge.target === node.id);
+
   for (const input of inputs) {
-    const inputValue = node.data.inputs[input.name];
-    const inputValueProvided = inputValue?.length > 0;
+    const inputValue = node.data.inputs?.[input.name];
+    const inputValueProvided = inputValue && inputValue.toString().length > 0;
+
     if (inputValueProvided) {
       // this input is fine, so we can move on
       continue;
     }
 
-    // If a value is not provided by the user then we need to check
-    // if there is an output linked to the current input
-    const incomingEdges = edges.filter((edge) => edge.target === node.id);
-
-    const inputLinkedToOutput = incomingEdges.find(
-      (edge) => edge.targetHandle === input.name,
-    );
-
-    const requiredInputProvidedByVisitedOutput =
-      input.required &&
-      inputLinkedToOutput &&
-      planned.has(inputLinkedToOutput.source);
-
-    if (requiredInputProvidedByVisitedOutput) {
-      // the inputs is required and we have a valid value for it
-      // provided by a task that is already planned
-      continue;
-    } else if (!input.required) {
-      // If the input is not required but there is an ouput linked to it
-      // then we need to be sure that the output is already planned
-      if (!inputLinkedToOutput) continue;
-      if (inputLinkedToOutput && planned.has(inputLinkedToOutput.source)) {
-        // The output is providing a value to the input: the input is fine
+    // For simplified connections, if there's an incoming edge and this is not a required input,
+    // we can assume it might get its value from the connected node
+    if (hasIncomingConnection && !input.required) {
+      const incomingEdge = edges.find((edge) => edge.target === node.id);
+      if (incomingEdge && planned.has(incomingEdge.source)) {
         continue;
       }
     }
 
-    invalidInputs.push(input.name);
+    // Check if this is a required input that needs a value
+    if (input.required && !inputValueProvided) {
+      invalidInputs.push(input.name);
+    }
   }
 
   return invalidInputs;

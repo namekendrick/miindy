@@ -1,7 +1,6 @@
 "use server";
 
 import prisma from "@/lib/prisma";
-import { createFlowNode } from "@/features/workflows/utils/create-flow-node";
 import { currentUser } from "@/lib/auth";
 
 export const createWorkflow = async (values) => {
@@ -20,8 +19,6 @@ export const createWorkflow = async (values) => {
   if (!permission) return { status: 401, message: "Unauthorized!" };
 
   const initialFlow = { nodes: [], edges: [] };
-
-  initialFlow.nodes.push(createFlowNode("LAUNCH_BROWSER"));
 
   const workflow = await prisma.workflow.create({
     data: {

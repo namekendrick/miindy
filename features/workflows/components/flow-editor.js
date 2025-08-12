@@ -14,18 +14,14 @@ import { useCallback, useEffect } from "react";
 
 import { DeletableEdge } from "@/features/workflows/components/edges/deletable-edge";
 import { NodeComponent } from "@/features/workflows/components/nodes/node-component";
-import { TASK_REGISTRY } from "@/features/workflows/constants/registry";
+import { useFocusedNode } from "@/features/workflows/hooks/use-focused-node";
 import { createFlowNode } from "@/features/workflows/utils/create-flow-node";
 
 import "@xyflow/react/dist/style.css";
 
-const nodeTypes = {
-  MiindyNode: NodeComponent,
-};
+const nodeTypes = { MiindyNode: NodeComponent };
 
-const edgeTypes = {
-  default: DeletableEdge,
-};
+const edgeTypes = { default: DeletableEdge };
 
 const snapGrid = [50, 50];
 const fitViewOptions = { padding: 1 };
@@ -33,7 +29,18 @@ const fitViewOptions = { padding: 1 };
 export const FlowEditor = ({ workflow }) => {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
-  const { setViewport, screenToFlowPosition, updateNodeData } = useReactFlow();
+  const { setViewport, screenToFlowPosition } = useReactFlow();
+  const { setFocusedNode, clearFocusedNode } = useFocusedNode();
+
+  // Sync our focus state with ReactFlow's selection
+  useEffect(() => {
+    const selectedNode = nodes.find((node) => node.selected);
+    if (selectedNode) {
+      setFocusedNode(selectedNode.id);
+    } else {
+      clearFocusedNode();
+    }
+  }, [nodes, setFocusedNode, clearFocusedNode]);
 
   const onDragOver = useCallback((event) => {
     event.preventDefault();
@@ -52,6 +59,7 @@ export const FlowEditor = ({ workflow }) => {
       });
 
       const newNode = createFlowNode(taskType, position);
+      newNode.selected = true;
       setNodes((nds) => nds.concat(newNode));
     },
     [screenToFlowPosition, setNodes],
@@ -60,50 +68,18 @@ export const FlowEditor = ({ workflow }) => {
   const onConnect = useCallback(
     (connection) => {
       setEdges((eds) => addEdge({ ...connection, animated: true }, eds));
-      if (!connection.targetHandle) return;
-      const node = nodes.find((nd) => nd.id === connection.target);
-      if (!node) return;
-      const nodeInputs = node.data.inputs;
-      updateNodeData(node.id, {
-        inputs: {
-          ...nodeInputs,
-          [connection.targetHandle]: "",
-        },
-      });
     },
-    [setEdges, updateNodeData, nodes],
+    [setEdges],
   );
 
   const isValidConnection = useCallback(
     (connection) => {
-      // No self-connections allowed
-      if (connection.source === connection.target) {
-        return false;
-      }
+      if (connection.source === connection.target) return false;
 
-      // Same taskParam type connection
       const source = nodes.find((node) => node.id === connection.source);
       const target = nodes.find((node) => node.id === connection.target);
-      if (!source || !target) {
-        console.error("invalid connection: source or target node not found");
-        return false;
-      }
 
-      const sourceTask = TASK_REGISTRY[source.data.type];
-      const targetTask = TASK_REGISTRY[target.data.type];
-
-      const output = sourceTask.outputs.find(
-        (o) => o.name === connection.sourceHandle,
-      );
-
-      const input = targetTask.inputs.find(
-        (o) => o.name === connection.targetHandle,
-      );
-
-      if (input?.type !== output?.type) {
-        console.error("invalid connection: type mismatch");
-        return false;
-      }
+      if (!source || !target) return false;
 
       const hasCycle = (node, visited = new Set()) => {
         if (visited.has(node.id)) return false;
@@ -134,7 +110,7 @@ export const FlowEditor = ({ workflow }) => {
   }, [workflow.definition, setEdges, setNodes, setViewport]);
 
   return (
-    <main className="h-full w-full">
+    <main className="relative h-full w-full">
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -154,6 +130,18 @@ export const FlowEditor = ({ workflow }) => {
         <Controls position="bottom-left" fitViewOptions={fitViewOptions} />
         <Background variant="dots" gap={12} size={1} />
       </ReactFlow>
+      {nodes.length === 0 && (
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+          <div className="pointer-events-auto rounded-lg bg-white/90 p-8 text-center shadow-lg dark:bg-gray-900/90">
+            <h3 className="mb-2 text-lg font-semibold">
+              Start Building Your Workflow
+            </h3>
+            <p className="text-muted-foreground">
+              Drag a trigger from the left sidebar to begin
+            </p>
+          </div>
+        </div>
+      )}
     </main>
   );
 };

@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 export const NodeCard = ({ children, nodeId, isSelected }) => {
   const { getNode, setCenter } = useReactFlow();
   const { invalidInputs } = useFlowValidation();
+
   const hasInvalidInputs = invalidInputs.some((node) => node.nodeId === nodeId);
 
   return (
@@ -29,7 +30,7 @@ export const NodeCard = ({ children, nodeId, isSelected }) => {
         });
       }}
       className={cn(
-        "bg-background flex w-[420px] border-separate cursor-pointer flex-col gap-1 rounded-md border-2 text-xs",
+        "bg-background flex w-[250px] border-separate cursor-pointer flex-col gap-1 rounded-md border-2 text-xs",
         isSelected && "border-primary",
         hasInvalidInputs && "border-destructive border-2",
       )}

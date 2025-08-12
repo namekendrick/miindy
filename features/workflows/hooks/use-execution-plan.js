@@ -12,8 +12,8 @@ export const useExecutionPlan = () => {
   const handleError = useCallback(
     (error) => {
       switch (error.type) {
-        case "NO_ENTRY_POINT":
-          toast.error("No entry point found");
+        case "NO_TRIGGER":
+          toast.error("No trigger found. Add a trigger to start your workflow");
           break;
         case "INVALID_INPUTS":
           toast.error("Not all inputs values are set");

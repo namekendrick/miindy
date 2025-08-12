@@ -220,6 +220,7 @@ const setupEnvironmentForPhase = (node, environment, edges) => {
   environment.phases[node.id] = { inputs: {}, outputs: {} };
   const inputs = TASK_REGISTRY[node.data.type].inputs;
 
+  // First, process the standard inputs defined in the task registry
   for (const input of inputs) {
     if (input.type === "BROWSER_INSTANCE") continue;
 
@@ -246,6 +247,19 @@ const setupEnvironmentForPhase = (node, environment, edges) => {
       ];
 
     environment.phases[node.id].inputs[input.name] = outputValue;
+  }
+
+  // For nodes with custom config (like UPDATE_RECORD), also include ALL node inputs
+  // This handles dynamic inputs that aren't defined in the task registry
+  const task = TASK_REGISTRY[node.data.type];
+  if (task.hasCustomConfig && node.data.inputs) {
+    Object.keys(node.data.inputs).forEach((inputName) => {
+      // Only add if not already processed above
+      if (!environment.phases[node.id].inputs.hasOwnProperty(inputName)) {
+        environment.phases[node.id].inputs[inputName] =
+          node.data.inputs[inputName];
+      }
+    });
   }
 };
 

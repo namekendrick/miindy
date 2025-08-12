@@ -1,15 +1,8 @@
+import { Handle, Position } from "@xyflow/react";
 import { memo } from "react";
 
 import { NodeCard } from "@/features/workflows/components/nodes/node-card";
 import { NodeHeader } from "@/features/workflows/components/nodes/node-header";
-import {
-  NodeInput,
-  NodeInputs,
-} from "@/features/workflows/components/nodes/node-inputs";
-import {
-  NodeOutput,
-  NodeOutputs,
-} from "@/features/workflows/components/nodes/node-outputs";
 import { TASK_REGISTRY } from "@/features/workflows/constants/registry";
 
 export const NodeComponent = memo((props) => {
@@ -19,17 +12,18 @@ export const NodeComponent = memo((props) => {
   return (
     <NodeCard nodeId={props.id} isSelected={!!props.selected}>
       <NodeHeader taskType={nodeData.type} nodeId={props.id} />
-      <NodeInputs>
-        {task.inputs.map((input) => (
-          <NodeInput key={input.name} input={input} nodeId={props.id} />
-        ))}
-      </NodeInputs>
-
-      <NodeOutputs>
-        {task.outputs.map((output) => (
-          <NodeOutput key={output.name} output={output} />
-        ))}
-      </NodeOutputs>
+      {!task.isTrigger && (
+        <Handle
+          type="target"
+          position={Position.Left}
+          className="!bg-muted-foreground !border-background !-left-2 !h-4 !w-4 !border-2"
+        />
+      )}
+      <Handle
+        type="source"
+        position={Position.Right}
+        className="!bg-muted-foreground !border-background !-right-2 !h-4 !w-4 !border-2"
+      />
     </NodeCard>
   );
 });
