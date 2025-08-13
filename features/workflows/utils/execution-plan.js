@@ -1,4 +1,5 @@
 import { TASK_REGISTRY } from "@/features/workflows/constants/registry";
+import { isVariableReference } from "@/features/workflows/utils/variable-resolver";
 
 export const flowToExecutionPlan = (nodes, edges) => {
   const triggerNode = nodes.find(
@@ -87,20 +88,23 @@ const getInvalidInputs = (node, edges, planned) => {
   const invalidInputs = [];
   const inputs = TASK_REGISTRY[node.data.type].inputs;
 
-  // Check if node has incoming connection
   const hasIncomingConnection = edges.some((edge) => edge.target === node.id);
 
   for (const input of inputs) {
     const inputValue = node.data.inputs?.[input.name];
-    const inputValueProvided = inputValue && inputValue.toString().length > 0;
+    let inputValueProvided = inputValue && inputValue.toString().length > 0;
 
-    if (inputValueProvided) {
-      // this input is fine, so we can move on
-      continue;
+    if (isVariableReference(inputValue)) {
+      const sourceNodeId = inputValue.nodeId;
+      if (!planned.has(sourceNodeId)) {
+        invalidInputs.push(input.name);
+        continue;
+      }
+      inputValueProvided = true;
     }
 
-    // For simplified connections, if there's an incoming edge and this is not a required input,
-    // we can assume it might get its value from the connected node
+    if (inputValueProvided) continue;
+
     if (hasIncomingConnection && !input.required) {
       const incomingEdge = edges.find((edge) => edge.target === node.id);
       if (incomingEdge && planned.has(incomingEdge.source)) {
@@ -108,24 +112,36 @@ const getInvalidInputs = (node, edges, planned) => {
       }
     }
 
-    // Check if this is a required input that needs a value
-    if (input.required && !inputValueProvided) {
-      invalidInputs.push(input.name);
-    }
+    if (input.required && !inputValueProvided) invalidInputs.push(input.name);
+  }
+
+  // Check for dynamic inputs that aren't in the inputs definition (like dynamic attribute inputs)
+  if (node.data.inputs) {
+    Object.keys(node.data.inputs).forEach((inputName) => {
+      // Skip inputs that are already defined in the task's inputs array
+      if (inputs.some((input) => input.name === inputName)) return;
+
+      const inputValue = node.data.inputs[inputName];
+
+      if (isVariableReference(inputValue)) {
+        const sourceNodeId = inputValue.nodeId;
+        if (!planned.has(sourceNodeId)) {
+          invalidInputs.push(inputName);
+        }
+      }
+    });
   }
 
   return invalidInputs;
 };
 
 const getIncomers = (node, nodes, edges) => {
-  if (!node.id) {
-    return [];
-  }
+  if (!node.id) return [];
+
   const incomersIds = new Set();
+
   edges.forEach((edge) => {
-    if (edge.target === node.id) {
-      incomersIds.add(edge.source);
-    }
+    if (edge.target === node.id) incomersIds.add(edge.source);
   });
 
   return nodes.filter((n) => incomersIds.has(n.id));

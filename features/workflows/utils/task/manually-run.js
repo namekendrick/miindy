@@ -6,6 +6,6 @@ export const ManuallyRunTask = {
   icon: (props) => <PlayIcon className="stroke-blue-400" {...props} />,
   isTrigger: true,
   credits: 0,
-  inputs: [],
+  inputs: [], // No inputs for manual trigger
   outputs: [{ name: "Flow started", type: "TRIGGER" }],
 };

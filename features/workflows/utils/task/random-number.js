@@ -10,16 +10,12 @@ export const RandomNumberTask = {
     {
       name: "Minimum",
       type: "NUMBER",
-      helperText: "Minimum value (default: 0)",
       required: false,
-      hideHandle: false,
     },
     {
       name: "Maximum",
       type: "NUMBER",
-      helperText: "Maximum value (default: 100)",
       required: false,
-      hideHandle: false,
     },
   ],
   outputs: [{ name: "Random number", type: "NUMBER" }],

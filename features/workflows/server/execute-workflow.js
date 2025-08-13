@@ -1,63 +1,99 @@
-import { revalidatePath } from "next/cache";
-
 import prisma from "@/lib/prisma";
 import {
   EXECUTOR_REGISTRY,
   TASK_REGISTRY,
 } from "@/features/workflows/constants/registry";
 import { createLogCollector } from "@/features/workflows/utils/create-log-collector";
+import { resolvePhaseInputs } from "@/features/workflows/utils/variable-resolver";
 
 export const executeWorkflow = async (executionId, nextRunAt) => {
-  const execution = await prisma.workflowExecution.findUnique({
-    where: { id: executionId },
-    include: { workflow: true, phases: true },
-  });
+  try {
+    const execution = await prisma.workflowExecution.findUnique({
+      where: { id: executionId },
+      include: { workflow: true, phases: true },
+    });
 
-  if (!execution) {
-    return { status: 404, message: "Execution not found!" };
-  }
+    if (!execution) return { status: 404, message: "Execution not found!" };
 
-  const workspaceId = execution.workflow.workspaceId;
+    const workspaceId = execution.workflow.workspaceId;
 
-  const edges = JSON.parse(execution.definition).edges;
+    const edges = JSON.parse(execution.definition).edges;
 
-  const environment = { phases: {} };
+    const environment = { phases: {} };
 
-  await initializeWorkflowExecution(
-    executionId,
-    execution.workflowId,
-    nextRunAt,
-  );
-
-  await initializePhaseStatuses(execution);
-
-  let creditsConsumed = 0;
-  let executionFailed = false;
-
-  for (const phase of execution.phases) {
-    const phaseExecution = await executeWorkflowPhase(
-      phase,
-      environment,
-      edges,
-      workspaceId,
+    await initializeWorkflowExecution(
+      executionId,
+      execution.workflowId,
+      nextRunAt,
     );
 
-    creditsConsumed += phaseExecution.creditsConsumed;
+    await initializePhaseStatuses(execution);
 
-    if (!phaseExecution.success) {
-      executionFailed = true;
-      break;
+    let creditsConsumed = 0;
+    let executionFailed = false;
+    let failureReason = null;
+
+    for (const phase of execution.phases) {
+      try {
+        const phaseExecution = await executeWorkflowPhase(
+          phase,
+          environment,
+          edges,
+          workspaceId,
+        );
+
+        creditsConsumed += phaseExecution.creditsConsumed;
+
+        if (!phaseExecution.success) {
+          executionFailed = true;
+          failureReason = `Phase ${phase.id} failed`;
+          break;
+        }
+      } catch (error) {
+        console.error(`Phase execution error for phase ${phase.id}:`, error);
+        executionFailed = true;
+        failureReason = `Phase ${phase.id} crashed: ${error.message}`;
+        break;
+      }
     }
+
+    await finalizeWorkflowExecution(
+      executionId,
+      execution.workflowId,
+      executionFailed,
+      creditsConsumed,
+      failureReason,
+    );
+
+    await cleanupEnvironment(environment);
+
+    return {
+      status: executionFailed ? 500 : 200,
+      message: executionFailed
+        ? failureReason
+        : "Workflow completed successfully",
+      creditsConsumed,
+    };
+  } catch (error) {
+    console.error(`Workflow execution error for ${executionId}:`, error);
+
+    try {
+      await prisma.workflowExecution.update({
+        where: { id: executionId },
+        data: {
+          status: "FAILED",
+          completedAt: new Date(),
+        },
+      });
+    } catch (updateError) {
+      console.error(`Failed to update execution status:`, updateError);
+    }
+
+    return {
+      status: 500,
+      message: `Workflow execution failed: ${error.message}`,
+    };
   }
-
-  await finalizeWorkflowExecution(
-    executionId,
-    execution.workflowId,
-    executionFailed,
-    creditsConsumed,
-  );
-
-  await cleanupEnvironment(environment);
 };
 
 const initializeWorkflowExecution = async (
@@ -104,16 +140,23 @@ const finalizeWorkflowExecution = async (
   workflowId,
   executionFailed,
   creditsConsumed,
+  failureReason = null,
 ) => {
   const finalStatus = executionFailed ? "FAILED" : "COMPLETED";
 
+  const updateData = {
+    status: finalStatus,
+    completedAt: new Date(),
+    creditsConsumed,
+  };
+
+  if (executionFailed && failureReason) {
+    updateData.failureReason = failureReason;
+  }
+
   await prisma.workflowExecution.update({
     where: { id: executionId },
-    data: {
-      status: finalStatus,
-      completedAt: new Date(),
-      creditsConsumed,
-    },
+    data: updateData,
   });
 
   await prisma.workflow.update({
@@ -144,17 +187,16 @@ const executeWorkflowPhase = async (phase, environment, edges, workspaceId) => {
   });
 
   const creditsRequired = TASK_REGISTRY[node.data.type].credits;
+
   let success = await decrementCredits(
     workspaceId,
     creditsRequired,
     logCollector,
   );
+
   const creditsConsumed = success ? creditsRequired : 0;
 
-  if (success) {
-    // Execute the phase if the credits are sufficient
-    success = await executePhase(node, environment, logCollector);
-  }
+  if (success) success = await executePhase(node, environment, logCollector);
 
   const outputs = environment.phases[node.id].outputs;
 
@@ -202,8 +244,9 @@ const finalizePhase = async (
 
 const executePhase = async (node, environment, logCollector) => {
   const runFn = EXECUTOR_REGISTRY[node.data.type];
+
   if (!runFn) {
-    logCollector.error(`not found executor for ${node.data.type}`);
+    logCollector.error(`Executor not found for task type: ${node.data.type}`);
     return false;
   }
 
@@ -218,49 +261,16 @@ const executePhase = async (node, environment, logCollector) => {
 
 const setupEnvironmentForPhase = (node, environment, edges) => {
   environment.phases[node.id] = { inputs: {}, outputs: {} };
-  const inputs = TASK_REGISTRY[node.data.type].inputs;
 
-  // First, process the standard inputs defined in the task registry
-  for (const input of inputs) {
-    if (input.type === "BROWSER_INSTANCE") continue;
+  const taskInputs = TASK_REGISTRY[node.data.type].inputs;
 
-    const inputValue = node.data.inputs[input.name];
-
-    if (inputValue) {
-      environment.phases[node.id].inputs[input.name] = inputValue;
-      continue;
-    }
-
-    // Get input value from outputs in the environment
-    const connectedEdge = edges.find(
-      (edge) => edge.target === node.id && edge.targetHandle === input.name,
-    );
-
-    if (!connectedEdge) {
-      console.error("Missing edge for input", input.name, "node id:", node.id);
-      continue;
-    }
-
-    const outputValue =
-      environment.phases[connectedEdge.source].outputs[
-        connectedEdge.sourceHandle
-      ];
-
-    environment.phases[node.id].inputs[input.name] = outputValue;
-  }
-
-  // For nodes with custom config (like UPDATE_RECORD), also include ALL node inputs
-  // This handles dynamic inputs that aren't defined in the task registry
-  const task = TASK_REGISTRY[node.data.type];
-  if (task.hasCustomConfig && node.data.inputs) {
-    Object.keys(node.data.inputs).forEach((inputName) => {
-      // Only add if not already processed above
-      if (!environment.phases[node.id].inputs.hasOwnProperty(inputName)) {
-        environment.phases[node.id].inputs[inputName] =
-          node.data.inputs[inputName];
-      }
-    });
-  }
+  const resolvedInputs = resolvePhaseInputs(
+    node,
+    environment,
+    edges,
+    taskInputs,
+  );
+  environment.phases[node.id].inputs = resolvedInputs;
 };
 
 const createExecutionEnvironment = (node, environment, logCollector) => {

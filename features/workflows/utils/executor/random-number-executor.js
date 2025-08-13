@@ -1,28 +1,35 @@
-export const RandomNumberExecutor = async (environment) => {
-  const minimum = environment.getInput("Minimum");
-  const maximum = environment.getInput("Maximum");
+import {
+  validateNumericInput,
+  validateNumericRange,
+} from "@/features/workflows/utils/common-validators";
+import {
+  createStandardExecutor,
+  handleExecutorSuccess,
+} from "@/features/workflows/utils/error-handling";
 
-  // Parse and validate inputs with default values
-  const min = minimum ? parseFloat(minimum) : 0;
-  const max = maximum ? parseFloat(maximum) : 100;
+const randomNumberExecutorFn = async (environment) => {
+  const minimumInput = environment.getInput("Minimum");
+  const maximumInput = environment.getInput("Maximum");
 
-  // Validate that maximum is greater than minimum
-  if (max <= min) {
-    environment.log.error(
-      `Invalid range: Maximum (${max}) must be greater than Minimum (${min})`,
-    );
-    return false;
-  }
+  const minimum = validateNumericInput(minimumInput, "Minimum", 0);
+  const maximum = validateNumericInput(maximumInput, "Maximum", 100);
 
-  // Generate random number between min (inclusive) and max (inclusive)
-  const randomNumber = Math.floor(Math.random() * (max - min + 1)) + min;
+  validateNumericRange(minimum, maximum);
 
-  environment.log.info(
-    `Generated random number: ${randomNumber} (range: ${min}-${max})`,
+  const randomNumber =
+    Math.floor(Math.random() * (maximum - minimum + 1)) + minimum;
+
+  return handleExecutorSuccess(
+    environment,
+    { "Random number": randomNumber },
+    `Generated random number: ${randomNumber} (range: ${minimum}-${maximum})`,
   );
-
-  // Set the output value
-  environment.setOutput("Random number", randomNumber);
-
-  return true;
 };
+
+export const RandomNumberExecutor = createStandardExecutor(
+  randomNumberExecutorFn,
+  {
+    name: "Random Number Generator",
+    validateInputs: false,
+  },
+);

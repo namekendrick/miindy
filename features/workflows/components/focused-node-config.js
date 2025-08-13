@@ -5,32 +5,23 @@ import { ArrowLeft, Copy, Trash2 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { TASK_REGISTRY } from "@/features/workflows/constants/registry";
+import {
+  CONFIG_REGISTRY,
+  TASK_REGISTRY,
+} from "@/features/workflows/constants/registry";
 import { useFocusedNode } from "@/features/workflows/hooks/use-focused-node";
 import { createFlowNode } from "@/features/workflows/utils/create-flow-node";
-import { UpdateRecordConfig } from "@/features/workflows/components/update-record-config";
 
 export const FocusedNodeConfig = () => {
   const { focusedNodeId, clearFocusedNode } = useFocusedNode();
-  const { getNode, deleteElements, addNodes, updateNodeData } = useReactFlow();
+  const { getNode, deleteElements, addNodes } = useReactFlow();
 
   const node = focusedNodeId ? getNode(focusedNodeId) : null;
 
   if (!node) return null;
 
   const task = TASK_REGISTRY[node.data.type];
-
-  const handleInputChange = (inputName, value) => {
-    const currentInputs = node.data.inputs || {};
-    updateNodeData(focusedNodeId, {
-      inputs: {
-        ...currentInputs,
-        [inputName]: value,
-      },
-    });
-  };
+  const ConfigComponent = CONFIG_REGISTRY[node.data.type];
 
   const handleDelete = () => {
     deleteElements({ nodes: [{ id: focusedNodeId }] });
@@ -102,59 +93,23 @@ export const FocusedNodeConfig = () => {
         </div>
       </div>
 
-      {/* Custom configuration component */}
-      {task.hasCustomConfig && (
-        <div className="flex-1 overflow-auto p-4">
-          <h4 className="mb-5 text-base font-semibold">Inputs</h4>
-          {task.type === "UPDATE_RECORD" && (
-            <UpdateRecordConfig nodeId={focusedNodeId} />
-          )}
-        </div>
-      )}
-
-      {/* Standard inputs section */}
-      {!task.hasCustomConfig && task.inputs && task.inputs.length > 0 && (
-        <div className="flex-1 overflow-auto p-4">
-          <h4 className="mb-5 text-base font-semibold">Inputs</h4>
-          <div className="space-y-6">
-            {task.inputs.map((input) => {
-              const currentValue = node.data.inputs?.[input.name] || "";
-
-              return (
-                <div key={input.name} className="space-y-2">
-                  <Label htmlFor={input.name} className="text-sm font-normal">
-                    {input.name}
-                    {input.required && (
-                      <span className="text-destructive ml-1">*</span>
-                    )}
-                  </Label>
-                  <Input
-                    id={input.name}
-                    value={currentValue}
-                    onChange={(e) =>
-                      handleInputChange(input.name, e.target.value)
-                    }
-                    placeholder={
-                      input.helperText || `Enter ${input.name.toLowerCase()}`
-                    }
-                    className="text-sm"
-                    type={input.type === "NUMBER" ? "number" : "text"}
-                  />
-                </div>
-              );
-            })}
+      {/* Configuration component */}
+      <div className="flex-1 overflow-auto p-4">
+        {ConfigComponent ? (
+          <>
+            {!task.isTrigger && (
+              <h4 className="mb-5 text-base font-semibold">Inputs</h4>
+            )}
+            <ConfigComponent nodeId={focusedNodeId} />
+          </>
+        ) : (
+          <div className="flex justify-center p-10">
+            <p className="text-muted-foreground text-center text-sm">
+              Configuration component not found for {task.label}
+            </p>
           </div>
-        </div>
-      )}
-
-      {/* No inputs message */}
-      {!task.hasCustomConfig && (!task.inputs || task.inputs.length === 0) && (
-        <div className="flex justify-center p-10">
-          <p className="text-muted-foreground text-center text-sm">
-            This node has no configurable inputs
-          </p>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };
