@@ -1,7 +1,6 @@
 export const publicRoutes = [
   "/",
   "/api/inngest",
-  "/api/paragon",
   "/api/webhooks/stripe",
   "/auth/new-verification",
 ];

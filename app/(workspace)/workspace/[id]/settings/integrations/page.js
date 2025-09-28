@@ -1,16 +1,20 @@
-import { IntegrationsClient } from "@/app/(workspace)/workspace/[id]/settings/integrations/_components/integrations-client";
-import { generateParagonUserToken } from "@/features/integrations/server/paragon-auth";
+"use client";
 
-export default async function IntegrationsSettingsPage() {
-  const tokenResult = await generateParagonUserToken();
+import { Card, CardContent } from "@/components/ui/card";
 
-  const paragonUserToken = tokenResult.success ? tokenResult.token : null;
-  const tokenError = tokenResult.success ? null : tokenResult.error;
-
+export default function IntegrationsSettingsPage() {
   return (
-    <IntegrationsClient
-      paragonUserToken={paragonUserToken}
-      tokenError={tokenError}
-    />
+    <div className="space-y-6">
+      <Card>
+        <CardContent>
+          <div className="text-center">
+            <h3 className="text-lg font-semibold">Coming Soon</h3>
+            <p className="mt-2 text-sm">
+              Currently, integrations are handled through n8n.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

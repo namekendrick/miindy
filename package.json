@@ -45,7 +45,6 @@
     "@tanstack/react-table": "^8.21.2",
     "@uploadcare/react-uploader": "^1.6.0",
     "@uploadcare/upload-client": "^6.14.3",
-    "@useparagon/connect": "^2.0.9",
     "@xyflow/react": "^12.6.4",
     "bcryptjs": "^3.0.2",
     "cheerio": "^1.0.0",
