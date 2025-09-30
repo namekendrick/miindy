@@ -2,14 +2,11 @@ import {
   Box,
   CalendarSync,
   CreditCard,
-  FileUser,
-  Handshake,
   Zap,
   Home,
   Layers,
   Palette,
   PanelsTopLeft,
-  Store,
   User,
   Users,
 } from "lucide-react";
@@ -24,34 +21,6 @@ export const navMain = [
     title: "Workflows",
     url: "workflows",
     icon: Layers,
-  },
-];
-
-export const navRecords = [
-  {
-    title: "Companies",
-    url: "companies",
-    icon: Store,
-  },
-  {
-    title: "Deals",
-    url: "deals",
-    icon: Handshake,
-  },
-  {
-    title: "People",
-    url: "people",
-    icon: FileUser,
-  },
-  {
-    title: "Users",
-    url: "users",
-    icon: Users,
-  },
-  {
-    title: "Workspaces",
-    url: "workspaces",
-    icon: PanelsTopLeft,
   },
 ];
 

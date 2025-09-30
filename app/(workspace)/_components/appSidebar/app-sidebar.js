@@ -10,7 +10,7 @@ import {
   SidebarFooter,
   SidebarHeader,
 } from "@/components/ui/sidebar";
-import { navMain, navRecords } from "@/constants/menus";
+import { navMain } from "@/constants/menus";
 import { AvailableCreditsBadge } from "@/features/billing/components/available-credits-badge";
 
 export const AppSidebar = ({ user, workspaces, active }) => {
@@ -23,7 +23,7 @@ export const AppSidebar = ({ user, workspaces, active }) => {
         </SidebarHeader>
         <SidebarContent>
           <NavMain items={navMain} />
-          <NavRecords items={navRecords} />
+          <NavRecords />
         </SidebarContent>
         <SidebarFooter>
           <NavUser user={user} />
