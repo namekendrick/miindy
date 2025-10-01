@@ -8,6 +8,7 @@ import { CreateViewModal } from "@/features/records/components/modals/create-vie
 import { DeleteViewModal } from "@/features/records/components/modals/delete-view-modal";
 import { NewViewModal } from "@/features/records/components/modals/new-view-modal";
 import { RenameViewModal } from "@/features/records/components/modals/rename-view-modal";
+import { TaskDetailSheet } from "@/features/tasks/components/task-detail-sheet";
 import { CreateWorkflowModal } from "@/features/workflows/components/modals/create-workflow-modal";
 import { DeleteWorkflowModal } from "@/features/workflows/components/modals/delete-workflow-modal";
 import { DuplicateWorkflowModal } from "@/features/workflows/components/modals/duplicate-workflow";
@@ -33,6 +34,7 @@ export const ModalProvider = () => {
       <DeleteViewModal />
       <NewViewModal />
       <RenameViewModal />
+      <TaskDetailSheet />
       <CreateWorkflowModal />
       <DeleteWorkflowModal />
       <DuplicateWorkflowModal />

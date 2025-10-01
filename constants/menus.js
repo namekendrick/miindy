@@ -9,6 +9,7 @@ import {
   PanelsTopLeft,
   User,
   Users,
+  SquareCheckBig,
 } from "lucide-react";
 
 export const navMain = [
@@ -16,6 +17,11 @@ export const navMain = [
     title: "Home",
     url: "home",
     icon: Home,
+  },
+  {
+    title: "Tasks",
+    url: "tasks",
+    icon: SquareCheckBig,
   },
   {
     title: "Workflows",
